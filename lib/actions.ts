@@ -101,7 +101,7 @@ async function consumeRateLimit({
   const blockUntil = new Date(now.getTime() + blockMs);
   const key = hashIdentifier(identifier);
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const existing = await tx.authRateLimit.findUnique({
       where: {
         scope_identifier: {
@@ -618,7 +618,7 @@ export async function registerOwner(formData: FormData) {
   }
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.create({
         data: {
           name,
