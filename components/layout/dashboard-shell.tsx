@@ -34,9 +34,9 @@ export async function DashboardShell({
   const sessionUser = await getOptionalSessionUser();
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <div className="page-shell-wide grid gap-5 py-4 sm:gap-6 sm:py-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
-        <aside className="glass-card rounded-[30px] border border-[var(--border)] p-4 sm:p-5 xl:sticky xl:top-24 xl:min-h-[calc(100vh-7rem)] xl:self-start xl:p-6">
+    <div className="min-h-screen bg-transparent xl:h-dvh xl:overflow-hidden">
+      <div className="page-shell-wide grid min-h-screen gap-5 py-4 sm:gap-6 sm:py-6 xl:h-dvh xl:grid-cols-[280px_minmax(0,1fr)] xl:items-stretch xl:py-5">
+        <aside className="glass-card rounded-[30px] border border-[var(--border)] p-4 sm:p-5 xl:sticky xl:top-0 xl:flex xl:h-[calc(100dvh-2.5rem)] xl:flex-col xl:self-stretch xl:p-6">
           <div className="mb-5 flex items-center gap-3 sm:mb-6 xl:mb-8">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] text-lg font-bold text-white shadow-[0_14px_32px_rgba(15,118,110,0.25)]">
               T
@@ -79,7 +79,7 @@ export async function DashboardShell({
             ))}
           </nav>
 
-          <div className="mt-5 rounded-[26px] bg-[#14312c] p-5 text-white shadow-[0_18px_40px_rgba(20,49,44,0.2)] sm:mt-6 xl:mt-8">
+          <div className="mt-5 rounded-[26px] bg-[#14312c] p-5 text-white shadow-[0_18px_40px_rgba(20,49,44,0.2)] sm:mt-6 xl:mt-auto">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm text-white/70">Link publik</p>
@@ -105,7 +105,7 @@ export async function DashboardShell({
           </div>
         </aside>
 
-        <main className="min-w-0">{children}</main>
+        <main className="min-w-0 xl:h-[calc(100dvh-2.5rem)] xl:overflow-y-auto xl:pr-1">{children}</main>
       </div>
     </div>
   );
