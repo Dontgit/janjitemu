@@ -19,7 +19,7 @@ export default async function PublicBookingPage({
   const initialValues = getPublicBookingValuesFromSearchParams(resolvedSearchParams);
 
   return (
-    <div className="page-shell py-6 sm:py-10">
+    <div className="page-shell py-5 sm:py-8 lg:py-10">
       <Link
         href="/"
         className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--muted)] transition hover:text-[var(--foreground)]"
@@ -30,8 +30,8 @@ export default async function PublicBookingPage({
 
       <FeedbackBanner feedback={feedback} className="mb-6" />
 
-      <Card className="mb-6 p-5 sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-3">
+      <Card className="mb-6 p-5 sm:p-6 lg:p-7">
+        <div className="grid gap-4 md:grid-cols-3">
           <div>
             <p className="text-sm text-[var(--muted)]">Bisnis</p>
             <p className="mt-1 font-semibold">{business.name}</p>

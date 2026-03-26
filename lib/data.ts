@@ -24,12 +24,13 @@ import {
   DashboardStat,
   PaginatedResult,
   Service,
-  TimelineItem
+  TimelineItem,
+  BookingAddOn,
+  FollowUpStatus
 } from "@/lib/types";
 
 const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
 const AVAILABILITY_WINDOW_DAYS = 5;
-const SLOT_INTERVAL_MINS = 15;
 
 const labelFormatter = new Intl.DateTimeFormat("id-ID", {
   weekday: "long",
@@ -113,6 +114,43 @@ function hasOverlap(start: Date, end: Date, booking: Booking) {
   return start < range.end && end > range.start;
 }
 
+function mapFollowUpStatus(status: string | null | undefined): FollowUpStatus {
+  switch (status) {
+    case "NEEDS_FOLLOW_UP":
+      return "needs-follow-up";
+    case "CONTACTED":
+      return "contacted";
+    case "OFFER_SENT":
+      return "offer-sent";
+    case "WON":
+      return "won";
+    case "LOST":
+      return "lost";
+    default:
+      return "none";
+  }
+}
+
+function parseBookingAddOns(value: Prisma.JsonValue | null | undefined): BookingAddOn[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const record = item as Record<string, unknown>;
+      if (typeof record.id !== "string" || typeof record.name !== "string") return null;
+      return {
+        id: record.id,
+        name: record.name,
+        price: Number(record.price ?? 0),
+        duration: Number(record.duration ?? 0)
+      } satisfies BookingAddOn;
+    })
+    .filter(Boolean) as BookingAddOn[];
+}
+
 function buildBookingFromDb(booking: {
   id: string;
   businessId: string;
@@ -125,8 +163,14 @@ function buildBookingFromDb(booking: {
   scheduledAt: Date;
   endAt: Date;
   serviceDurationSnapshot: number;
+  totalDurationSnapshot?: number;
+  totalPriceSnapshot?: number;
+  addOnSummary?: Prisma.JsonValue | null;
   status: string;
   notes: string | null;
+  followUpStatus?: string | null;
+  followUpNote?: string | null;
+  followUpNextActionAt?: Date | null;
 }) {
   return {
     id: booking.id,
@@ -137,20 +181,27 @@ function buildBookingFromDb(booking: {
     email: booking.customerEmailSnapshot,
     serviceId: booking.serviceId,
     serviceName: booking.serviceNameSnapshot,
+    addOns: parseBookingAddOns(booking.addOnSummary),
     date: formatDate(booking.scheduledAt),
     time: formatTime(booking.scheduledAt),
     endDate: formatDate(booking.endAt),
     endTime: formatTime(booking.endAt),
     duration: booking.serviceDurationSnapshot,
+    totalDuration: booking.totalDurationSnapshot ?? booking.serviceDurationSnapshot,
+    totalPrice: booking.totalPriceSnapshot ?? 0,
     status: mapStatus(booking.status),
-    notes: booking.notes ?? undefined
+    notes: booking.notes ?? undefined,
+    followUpStatus: mapFollowUpStatus(booking.followUpStatus),
+    followUpNote: booking.followUpNote ?? null,
+    followUpNextActionAt: booking.followUpNextActionAt?.toISOString() ?? null
   } satisfies Booking;
 }
 
 function buildAvailability(
   hours: BusinessHour[],
   bookings: Booking[],
-  serviceDuration: number
+  serviceDuration: number,
+  slotIntervalMins: number
 ): AvailabilityDay[] {
   const now = new Date();
 
@@ -187,7 +238,7 @@ function buildAvailability(
         slots.push(formatTime(slotStart));
       }
 
-      cursor.setMinutes(cursor.getMinutes() + SLOT_INTERVAL_MINS);
+      cursor.setMinutes(cursor.getMinutes() + slotIntervalMins);
     }
 
     return {
@@ -339,6 +390,7 @@ export async function getOwnerBusiness(): Promise<BusinessProfile> {
       phone: business.phone ?? "",
       email: business.email ?? "",
       reminderChannel: business.reminderChannel ?? "Email + reminder dashboard",
+      bookingSlotInterval: business.bookingSlotInterval ?? 15,
       onboardingCompleted: business.onboardingCompleted
     };
   }, fallbackBusinessProfile);
@@ -397,7 +449,8 @@ export async function getServices(businessId?: string): Promise<Service[]> {
       price: service.price,
       description: service.description,
       active: service.isActive,
-      popular: service.isPopular
+      popular: service.isPopular,
+      isAddon: service.isAddon
     }));
   }, fallbackServices);
 }
@@ -734,7 +787,8 @@ export async function getPaginatedServices({
           price: service.price,
           description: service.description,
           active: service.isActive,
-          popular: service.isPopular
+          popular: service.isPopular,
+          isAddon: service.isAddon
         })),
         total,
         normalizedPage,
@@ -751,8 +805,9 @@ export async function getPaginatedServices({
         price: service.price,
         description: service.description,
         active: service.isActive,
-        popular: service.isPopular
-      })),
+        popular: service.isPopular,
+          isAddon: service.isAddon
+        })),
       total,
       normalizedPage,
       perPage
@@ -925,7 +980,7 @@ export async function getTimelineItems(): Promise<TimelineItem[]> {
       meta: `${booking.status} • ${booking.phone}`
     }));
 
-  return todayItems.length > 0 ? todayItems : fallbackTimeline;
+  return todayItems;
 }
 
 export async function getAvailabilityForSlug(slug: string): Promise<AvailabilityDay[]> {
@@ -933,13 +988,13 @@ export async function getAvailabilityForSlug(slug: string): Promise<Availability
   const allBookings = await getBookings(business.id);
   const hours = await getBusinessHours(business.id);
   const services = await getServices(business.id);
-  const activeServices = services.filter((service) => service.active ?? true);
+  const activeServices = services.filter((service) => (service.active ?? true) && !service.isAddon);
 
   if (!business.id) {
     return fallbackBusinessProfile.slug === slug ? availableDates : [];
   }
 
-  return buildAvailability(hours, allBookings, activeServices[0]?.duration ?? services[0]?.duration ?? 30);
+  return buildAvailability(hours, allBookings, activeServices[0]?.duration ?? services[0]?.duration ?? 30, business.bookingSlotInterval ?? 15);
 }
 
 export async function getPublicPageData(slug: string) {
@@ -949,10 +1004,10 @@ export async function getPublicPageData(slug: string) {
     getBookings(business.id),
     getBusinessHours(business.id)
   ]);
-  const activeServices = services.filter((service) => service.active ?? true);
-  const visibleServices = activeServices.length > 0 ? activeServices : services;
+  const activeServices = services.filter((service) => (service.active ?? true) && !service.isAddon);
+  const visibleServices = activeServices.length > 0 ? activeServices : services.filter((service) => !service.isAddon);
   const availabilityByService = Object.fromEntries(
-    visibleServices.map((service) => [service.id, buildAvailability(hours, bookings, service.duration)])
+    visibleServices.map((service) => [service.id, buildAvailability(hours, bookings, service.duration, business.bookingSlotInterval ?? 15)])
   ) as Record<string, AvailabilityDay[]>;
   const openDays = hours.filter((hour) => hour.active).length;
 
@@ -963,6 +1018,7 @@ export async function getPublicPageData(slug: string) {
     availabilityByService,
     guidance: [
       `${openDays} hari operasional aktif per minggu`,
+      `Interval slot ${business.bookingSlotInterval ?? 15} menit`,
       business.phone ? `Konfirmasi tambahan bisa melalui ${business.phone}` : "Siapkan nomor aktif agar konfirmasi lebih cepat",
       visibleServices.length > 0 ? `${visibleServices.length} layanan siap dibooking` : "Tambahkan layanan aktif agar halaman publik lebih berguna"
     ]

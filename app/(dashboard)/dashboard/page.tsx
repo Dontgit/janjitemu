@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, CalendarCheck, ClockArrowUp, Users } from "lucide-react";
+import { BellRing, CalendarCheck, ClockArrowUp, Users, ArrowRight, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatusBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -37,10 +37,14 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell activePath="/dashboard" bookingLink={business.bookingLink}>
-      <div className="space-y-6">
-        <Card className="overflow-hidden p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-6 xl:space-y-7">
+        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
             <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-100 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)] shadow-[0_8px_20px_rgba(20,49,44,0.05)]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Workspace overview
+              </div>
               <PageHeader
                 eyebrow="Overview"
                 title={`Ringkasan operasional ${business.name}`}
@@ -56,34 +60,48 @@ export default async function DashboardPage() {
                   </>
                 }
               />
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
                 {stats.map((stat) => (
                   <StatCard key={stat.label} {...stat} />
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white">
-              <p className="text-sm uppercase tracking-[0.18em] text-white/60">Agenda hari ini</p>
+            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)] xl:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.18em] text-white/60">Agenda hari ini</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight">{timeline.length} aktivitas utama</p>
+                </div>
+                <span className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
+                  Live
+                </span>
+              </div>
               <div className="mt-6 space-y-4">
-                {timeline.map((item) => (
-                  <div key={`${item.time}-${item.title}`} className="rounded-[24px] bg-white/10 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="font-semibold">{item.title}</p>
-                        <p className="mt-1 text-sm text-white/70">{item.meta}</p>
-                      </div>
-                      <div className="rounded-full bg-white/10 px-3 py-1 text-sm">{item.time}</div>
-                    </div>
+                {timeline.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-white/15 bg-white/5 p-5 text-sm text-white/70">
+                    Belum ada agenda nyata hari ini. Saat booking hari ini masuk, daftar aktivitas akan muncul di sini.
                   </div>
-                ))}
+                ) : (
+                  timeline.map((item) => (
+                    <div key={`${item.time}-${item.title}`} className="rounded-[24px] border border-white/8 bg-white/10 p-4 backdrop-blur-sm">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-semibold">{item.title}</p>
+                          <p className="mt-1 text-sm text-white/70">{item.meta}</p>
+                        </div>
+                        <div className="rounded-full bg-white/10 px-3 py-1 text-sm">{item.time}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-[20px] bg-white/10 p-4">
+                <div className="rounded-[20px] border border-white/8 bg-white/10 p-4">
                   <p className="text-white/60">Total booking</p>
                   <p className="mt-2 text-2xl font-semibold">{bookingSummary.total}</p>
                 </div>
-                <div className="rounded-[20px] bg-white/10 p-4">
+                <div className="rounded-[20px] border border-white/8 bg-white/10 p-4">
                   <p className="text-white/60">Upcoming</p>
                   <p className="mt-2 text-2xl font-semibold">{bookingSummary.upcoming}</p>
                 </div>
@@ -92,13 +110,18 @@ export default async function DashboardPage() {
           </div>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
           <Card className="p-6">
-            <p className="text-lg font-semibold">Quick actions & business health</p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-lg font-semibold">Quick actions & business health</p>
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
+                Ready now
+              </span>
+            </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {quickPanels.map(({ icon: Icon, title, detail }) => (
-                <div key={title} className="rounded-[24px] border border-[var(--border)] bg-white p-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-[var(--primary)]">
+                <div key={title} className="surface-card rounded-[24px] p-4">
+                  <div className="icon-chip">
                     <Icon className="h-5 w-5" />
                   </div>
                   <p className="mt-4 font-semibold">{title}</p>
@@ -109,9 +132,9 @@ export default async function DashboardPage() {
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {highlights.map((item) => (
-                <div key={item.label} className="rounded-[24px] bg-teal-50/70 p-4">
+                <div key={item.label} className="rounded-[24px] border border-teal-100/80 bg-teal-50/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                   <p className="text-sm text-[var(--muted)]">{item.label}</p>
-                  <p className="mt-2 text-2xl font-semibold">{item.value}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
                   <p className="mt-2 text-sm text-[var(--primary)]">{item.detail}</p>
                 </div>
               ))}
@@ -119,9 +142,12 @@ export default async function DashboardPage() {
           </Card>
 
           <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-semibold">Booking terbaru</p>
-              <p className="text-sm text-[var(--muted)]">{bookings.length} booking</p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold">Booking terbaru</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">Prioritaskan yang masih pending dan paling dekat jadwalnya.</p>
+              </div>
+              <p className="text-sm font-medium text-[var(--muted)]">{bookings.length} booking</p>
             </div>
             {bookings.length === 0 ? (
               <EmptyState
@@ -135,21 +161,29 @@ export default async function DashboardPage() {
                 {bookings.slice(0, 6).map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex flex-col gap-4 rounded-[24px] border border-[var(--border)] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="surface-card rounded-[24px] p-4"
                   >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{booking.customerName}</p>
-                        <StatusBadge status={booking.status} />
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold">{booking.customerName}</p>
+                          <StatusBadge status={booking.status} />
+                        </div>
+                        <p className="mt-2 text-sm text-[var(--muted)]">
+                          {booking.serviceName} • {booking.date} • {booking.time}
+                        </p>
+                        {booking.notes ? (
+                          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{booking.notes}</p>
+                        ) : null}
                       </div>
-                      <p className="mt-2 text-sm text-[var(--muted)]">
-                        {booking.serviceName} • {booking.date} • {booking.time}
-                      </p>
-                      {booking.notes ? (
-                        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{booking.notes}</p>
-                      ) : null}
+                      <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
+                        <p className="text-sm text-[var(--muted)]">{booking.phone}</p>
+                        <Link href="/bookings" className="mt-0 inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary)] sm:mt-3">
+                          Detail
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
-                    <p className="text-sm text-[var(--muted)]">{booking.phone}</p>
                   </div>
                 ))}
               </div>

@@ -6,6 +6,14 @@ export type BookingStatus =
   | "cancelled"
   | "no-show";
 
+export type FollowUpStatus =
+  | "none"
+  | "needs-follow-up"
+  | "contacted"
+  | "offer-sent"
+  | "won"
+  | "lost";
+
 export type UserRole = "owner" | "staff";
 
 export type Service = {
@@ -17,6 +25,14 @@ export type Service = {
   description: string;
   active?: boolean;
   popular?: boolean;
+  isAddon?: boolean;
+};
+
+export type BookingAddOn = {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
 };
 
 export type Booking = {
@@ -28,13 +44,19 @@ export type Booking = {
   email?: string | null;
   serviceId: string;
   serviceName: string;
+  addOns?: BookingAddOn[];
   date: string;
   time: string;
   endDate?: string;
   endTime?: string;
   duration?: number;
+  totalDuration?: number;
+  totalPrice?: number;
   status: BookingStatus;
   notes?: string;
+  followUpStatus?: FollowUpStatus;
+  followUpNote?: string | null;
+  followUpNextActionAt?: string | null;
 };
 
 export type BusinessHour = {
@@ -58,6 +80,7 @@ export type BusinessProfile = {
   phone?: string;
   email?: string;
   reminderChannel: string;
+  bookingSlotInterval?: number;
   onboardingCompleted?: boolean;
 };
 
@@ -110,6 +133,7 @@ export type BookingSummary = {
 
 export type PublicBookingFormValues = {
   serviceId?: string;
+  addOnIds?: string;
   customerName?: string;
   phone?: string;
   email?: string;

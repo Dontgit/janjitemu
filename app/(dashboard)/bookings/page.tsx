@@ -1,3 +1,4 @@
+import { CalendarRange, Filter, PencilLine, Plus, Trash2 } from "lucide-react";
 import { createBooking, deleteBooking, updateBookingStatus } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { StatusBadge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
+import { formatDateTimeLabel } from "@/lib/utils";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { buildSearchPath, getSingleSearchParam, parsePaginationParams, replaceSearchParams } from "@/lib/search-params";
 
@@ -25,6 +27,8 @@ export default async function BookingsPage({
     getServices(),
     getBookingSummary()
   ]);
+  const mainServices = services.filter((service) => !service.isAddon);
+  const addOnServices = services.filter((service) => service.isAddon);
   const query = getSingleSearchParam(resolvedSearchParams.q).trim();
   const status = getSingleSearchParam(resolvedSearchParams.status);
   const serviceFilter = getSingleSearchParam(resolvedSearchParams.serviceId);
@@ -49,57 +53,70 @@ export default async function BookingsPage({
 
   return (
     <DashboardShell activePath="/bookings" bookingLink={business.bookingLink}>
-      <div className="space-y-6">
+      <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
-        <Card className="p-6 sm:p-8">
+        <Card className="premium-panel p-6 sm:p-8 xl:p-10">
           <PageHeader
             eyebrow="Booking Management"
             title="Kelola semua booking dari satu layar"
             description="Tambah booking manual, ubah status, reschedule, atau hapus booking yang salah input. Ini sudah mendekati flow owner sehari-hari untuk MVP."
           />
-          <div className="mt-6 grid gap-4 sm:grid-cols-4">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
               { label: "Total", value: summary.total },
               { label: "Pending", value: summary.pending },
               { label: "Hari ini", value: summary.today },
               { label: "Upcoming", value: summary.upcoming }
             ].map((item) => (
-              <div key={item.label} className="rounded-[24px] bg-white p-4">
+              <div key={item.label} className="surface-card rounded-[24px] p-4">
                 <p className="text-sm text-[var(--muted)]">{item.label}</p>
-                <p className="mt-2 text-2xl font-semibold">{item.value}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 xl:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-lg font-semibold">Cari & filter booking</p>
+              <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
+                <Filter className="h-3.5 w-3.5" />
+                Filter
+              </div>
+              <p className="mt-3 text-lg font-semibold">Cari & filter booking</p>
               <p className="mt-1 text-sm text-[var(--muted)]">Filter berdasarkan customer, nomor WhatsApp, layanan, atau status booking.</p>
             </div>
             <form className="grid gap-3 lg:min-w-[720px] lg:grid-cols-[minmax(0,1fr)_170px_220px_auto]" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={paginatedBookings.perPage} />
-              <Input name="q" placeholder="Cari customer / WhatsApp / layanan" defaultValue={query} />
-              <Select name="status" defaultValue={status}>
-                <option value="">Semua status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="rescheduled">Rescheduled</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="no-show">No-show</option>
-              </Select>
-              <Select name="serviceId" defaultValue={serviceFilter}>
-                <option value="">Semua layanan</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </Select>
-              <SubmitButton variant="secondary" className="lg:w-fit">Terapkan</SubmitButton>
+              <div className="form-field">
+                <span className="form-label">Keyword</span>
+                <Input name="q" placeholder="Cari customer / WhatsApp / layanan" defaultValue={query} />
+              </div>
+              <div className="form-field">
+                <span className="form-label">Status</span>
+                <Select name="status" defaultValue={status}>
+                  <option value="">Semua status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="rescheduled">Rescheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="no-show">No-show</option>
+                </Select>
+              </div>
+              <div className="form-field">
+                <span className="form-label">Layanan</span>
+                <Select name="serviceId" defaultValue={serviceFilter}>
+                  <option value="">Semua layanan</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <SubmitButton variant="secondary" className="lg:mb-0.5 lg:w-fit">Terapkan</SubmitButton>
             </form>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
@@ -107,23 +124,66 @@ export default async function BookingsPage({
           </p>
         </Card>
 
-        <Card className="p-6">
-          <p className="text-lg font-semibold">Tambah booking manual</p>
-          <form action={createBooking} className="mt-5 grid gap-4 md:grid-cols-2">
+        <Card className="p-6 xl:p-7">
+          <div className="flex items-center gap-3">
+            <span className="icon-chip">
+              <Plus className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-lg font-semibold">Tambah booking manual</p>
+              <p className="text-sm text-[var(--muted)]">Cocok untuk walk-in, booking via chat, atau follow up admin.</p>
+            </div>
+          </div>
+          <form action={createBooking} className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <input type="hidden" name="redirectTo" value={currentPath} />
-            <Input name="customerName" placeholder="Nama customer" required />
-            <Input name="phone" placeholder="Nomor WhatsApp" required />
-            <Input name="email" type="email" placeholder="Email (opsional)" />
-            <Select name="serviceId" defaultValue={services[0]?.id}>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </Select>
-            <Input name="date" type="date" required />
-            <Input name="time" type="time" required />
-            <div className="md:col-span-2">
+            <div className="form-field">
+              <span className="form-label">Nama customer</span>
+              <Input name="customerName" placeholder="Nama customer" required />
+            </div>
+            <div className="form-field">
+              <span className="form-label">WhatsApp</span>
+              <Input name="phone" placeholder="Nomor WhatsApp" required />
+            </div>
+            <div className="form-field">
+              <span className="form-label">Email</span>
+              <Input name="email" type="email" placeholder="Email (opsional)" />
+            </div>
+            <div className="form-field">
+              <span className="form-label">Layanan</span>
+              <Select name="serviceId" defaultValue={mainServices[0]?.id}>
+                {mainServices.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="form-field">
+              <span className="form-label">Tanggal</span>
+              <Input name="date" type="date" required />
+            </div>
+            <div className="form-field">
+              <span className="form-label">Jam</span>
+              <Input name="time" type="time" required />
+            </div>
+            {addOnServices.length > 0 ? (
+              <div className="form-field md:col-span-2 xl:col-span-3">
+                <span className="form-label">Add-on tambahan</span>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {addOnServices.map((service) => (
+                    <label key={service.id} className="field-card flex items-center justify-between gap-3 rounded-[20px] px-4 py-3 text-sm">
+                      <span>
+                        <span className="font-medium">{service.name}</span>
+                        <span className="mt-1 block text-[var(--muted)]">+{service.duration} menit • {service.price.toLocaleString('id-ID')}</span>
+                      </span>
+                      <input type="checkbox" name="addOnIds" value={service.id} />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="form-field md:col-span-2 xl:col-span-3">
+              <span className="form-label">Catatan</span>
               <Textarea name="notes" rows={3} placeholder="Catatan tambahan" />
             </div>
             <SubmitButton className="md:w-fit">Tambah booking</SubmitButton>
@@ -153,55 +213,127 @@ export default async function BookingsPage({
         ) : (
           <div className="grid gap-4">
             {paginatedBookings.items.map((booking) => (
-              <div
+              <Card
                 key={booking.id}
-                className="rounded-[28px] border border-[var(--border)] bg-white p-5"
+                className="p-5"
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2 lg:max-w-xl">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 space-y-4 xl:max-w-xl">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-lg font-semibold">{booking.customerName}</p>
                       <StatusBadge status={booking.status} />
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-slate-600">
                         {booking.id}
                       </span>
                     </div>
-                    <p className="text-sm text-[var(--muted)]">
-                      {booking.serviceName} • {booking.date} • {booking.time}
-                    </p>
-                    <p className="text-sm text-[var(--muted)]">{booking.phone}{booking.email ? ` • ${booking.email}` : ""}</p>
-                    {booking.notes ? (
-                      <p className="text-sm leading-6 text-[var(--foreground)]">{booking.notes}</p>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="surface-card rounded-[20px] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Layanan</p>
+                        <p className="mt-1 text-sm font-medium">{booking.serviceName}</p>
+                      </div>
+                      <div className="surface-card rounded-[20px] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Jadwal</p>
+                        <p className="mt-1 text-sm font-medium">{booking.date} • {booking.time}</p>
+                      </div>
+                      <div className="surface-card rounded-[20px] px-4 py-3 sm:col-span-2 lg:col-span-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Kontak</p>
+                        <p className="mt-1 break-words text-sm font-medium">{booking.phone}{booking.email ? ` • ${booking.email}` : ""}</p>
+                      </div>
+                    </div>
+
+                    {booking.addOns && booking.addOns.length > 0 ? (
+                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Add-on</p>
+                        <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">{booking.addOns.map((item) => item.name).join(', ')}</p>
+                      </div>
                     ) : null}
+
+                    {booking.notes ? (
+                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Catatan</p>
+                        <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">{booking.notes}</p>
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">After-sales / follow up</p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">Status: {booking.followUpStatus ?? 'none'}</p>
+                      {booking.followUpNote ? <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">{booking.followUpNote}</p> : null}
+                      <p className="mt-1 text-sm text-[var(--muted)]">Next action: {formatDateTimeLabel(booking.followUpNextActionAt)}</p>
+                    </div>
                   </div>
 
-                  <div className="grid gap-3 sm:min-w-[320px]">
-                    <form action={updateBookingStatus} className="grid gap-2">
+                  <div className="grid gap-3 xl:min-w-[360px] xl:max-w-[380px] xl:flex-1">
+                    <form action={updateBookingStatus} className="surface-card grid gap-3 rounded-[24px] p-4">
                       <input type="hidden" name="redirectTo" value={currentPath} />
                       <input type="hidden" name="bookingId" value={booking.id} />
-                      <Select name="status" defaultValue={booking.status}>
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="rescheduled">Rescheduled</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="no-show">No-show</option>
-                      </Select>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input name="date" type="date" defaultValue={booking.date} />
-                        <Input name="time" type="time" defaultValue={booking.time} />
+                      <div className="flex items-center gap-2">
+                        <span className="icon-chip h-10 w-10 rounded-[14px]">
+                          <PencilLine className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold">Update booking</p>
+                          <p className="text-xs text-[var(--muted)]">Status, tanggal, jam, dan catatan</p>
+                        </div>
                       </div>
-                      <Textarea name="notes" rows={2} defaultValue={booking.notes} />
+                      <div className="form-field">
+                        <span className="form-label">Status</span>
+                        <Select name="status" defaultValue={booking.status}>
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="rescheduled">Rescheduled</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="no-show">No-show</option>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="form-field">
+                          <span className="form-label">Tanggal</span>
+                          <Input name="date" type="date" defaultValue={booking.date} />
+                        </div>
+                        <div className="form-field">
+                          <span className="form-label">Jam</span>
+                          <Input name="time" type="time" defaultValue={booking.time} />
+                        </div>
+                      </div>
+                      <div className="form-field">
+                        <span className="form-label">Catatan</span>
+                        <Textarea name="notes" rows={2} defaultValue={booking.notes} />
+                      </div>
+                      <div className="form-field">
+                        <span className="form-label">Follow up status</span>
+                        <Select name="followUpStatus" defaultValue={booking.followUpStatus ?? 'none'}>
+                          <option value="none">Belum perlu follow up</option>
+                          <option value="needs-follow-up">Perlu follow up</option>
+                          <option value="contacted">Sudah dihubungi</option>
+                          <option value="offer-sent">Penawaran dikirim</option>
+                          <option value="won">Deal / berhasil</option>
+                          <option value="lost">Belum berhasil</option>
+                        </Select>
+                      </div>
+                      <div className="form-field">
+                        <span className="form-label">Follow up note</span>
+                        <Textarea name="followUpNote" rows={2} defaultValue={booking.followUpNote ?? ''} />
+                      </div>
+                      <div className="form-field">
+                        <span className="form-label">Next action</span>
+                        <Input name="followUpNextActionAt" type="datetime-local" defaultValue={booking.followUpNextActionAt ? booking.followUpNextActionAt.slice(0, 16) : ''} />
+                      </div>
                       <SubmitButton variant="secondary">Simpan perubahan</SubmitButton>
                     </form>
                     <form action={deleteBooking}>
                       <input type="hidden" name="redirectTo" value={currentPath} />
                       <input type="hidden" name="bookingId" value={booking.id} />
-                      <SubmitButton variant="ghost" className="w-full">Hapus booking</SubmitButton>
+                      <SubmitButton variant="ghost" className="w-full justify-center gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Hapus booking
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}

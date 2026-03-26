@@ -84,6 +84,7 @@ export default async function SettingsPage({
                   <Input name="city" defaultValue={businessProfile.city} placeholder="Kota" required />
                   <Input name="reminderChannel" defaultValue={businessProfile.reminderChannel} placeholder="Reminder channel" />
                   <Input name="slug" defaultValue={businessProfile.slug} placeholder="Slug booking" required />
+                  <Input name="bookingSlotInterval" type="number" min="5" step="5" defaultValue={businessProfile.bookingSlotInterval ?? 15} placeholder="Interval slot booking (menit)" required />
                   <Input name="phone" defaultValue={businessProfile.phone} placeholder="Nomor WhatsApp bisnis" />
                   <div className="sm:col-span-2">
                     <Input name="email" defaultValue={businessProfile.email} type="email" placeholder="Email bisnis" />
@@ -104,7 +105,7 @@ export default async function SettingsPage({
                   </span>
                   <div>
                     <p className="text-lg font-semibold">Jam operasional</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Atur hari aktif dan rentang jam supaya slot publik mengikuti ritme operasional bisnis.</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Atur hari aktif, rentang jam, dan granularity slot supaya availability publik benar-benar mengikuti ritme operasional bisnis.</p>
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -165,8 +166,8 @@ export default async function SettingsPage({
                   <p className="mt-2 text-2xl font-semibold">{businessHours.filter((hour) => hour.active).length}</p>
                 </div>
                 <div className="soft-stat rounded-[22px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Hari libur</p>
-                  <p className="mt-2 text-2xl font-semibold">{businessHours.filter((hour) => !hour.active).length}</p>
+                  <p className="text-sm text-[var(--muted)]">Interval slot</p>
+                  <p className="mt-2 text-2xl font-semibold">{businessProfile.bookingSlotInterval ?? 15}m</p>
                 </div>
               </div>
             </Card>

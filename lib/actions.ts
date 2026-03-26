@@ -47,6 +47,7 @@ const MAX_BUSINESS_TEXT_LENGTH = 160;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_NOTES_LENGTH = 2000;
 const MAX_SOURCE_LENGTH = 80;
+const FOLLOW_UP_STATUSES = ["none", "needs-follow-up", "contacted", "offer-sent", "won", "lost"] as const;
 
 function normalizeText(value: string, maxLength: number) {
   return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
@@ -277,6 +278,33 @@ function isValidTime(value: string) {
   return /^\d{2}:\d{2}$/.test(value);
 }
 
+function parseBookingSlotInterval(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function parseFollowUpStatus(value: string) {
+  switch (value) {
+    case "needs-follow-up": return "NEEDS_FOLLOW_UP";
+    case "contacted": return "CONTACTED";
+    case "offer-sent": return "OFFER_SENT";
+    case "won": return "WON";
+    case "lost": return "LOST";
+    default: return "NONE";
+  }
+}
+
+function normalizeFollowUpDateTime(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(`${trimmed}:00+07:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getSelectedValues(formData: FormData, key: string) {
+  return formData.getAll(key).map((item) => String(item).trim()).filter(Boolean);
+}
+
 function isPrismaKnownError(error: unknown): error is { code: string } {
   return Boolean(
     error &&
@@ -470,6 +498,7 @@ async function createOrUpdateCustomerForBusiness({
 async function createBookingRecord({
   businessId,
   serviceId,
+  addOnIds = [],
   name,
   phone,
   email,
@@ -480,6 +509,7 @@ async function createBookingRecord({
 }: {
   businessId: string;
   serviceId: string;
+  addOnIds?: string[];
   name: string;
   phone: string;
   email: string | null;
@@ -488,16 +518,27 @@ async function createBookingRecord({
   time: string;
   notes: string | null;
 }) {
-  const service = await prisma.service.findFirst({
-    where: { id: serviceId, businessId }
-  });
+  const [service, addOns] = await Promise.all([
+    prisma.service.findFirst({ where: { id: serviceId, businessId, isAddon: false } }),
+    addOnIds.length > 0
+      ? prisma.service.findMany({ where: { id: { in: addOnIds }, businessId, isAddon: true, isActive: true } })
+      : Promise.resolve([])
+  ]);
 
   if (!service) {
     return { error: "Layanan tidak ditemukan untuk bisnis ini." };
   }
 
+  if (addOnIds.length !== addOns.length) {
+    return { error: "Beberapa add-on tidak valid atau sudah tidak aktif." };
+  }
+
+  const addOnDuration = addOns.reduce((sum, item) => sum + item.durationMins, 0);
+  const addOnPrice = addOns.reduce((sum, item) => sum + item.price, 0);
+  const totalDuration = service.durationMins + addOnDuration;
+  const totalPrice = service.price + addOnPrice;
   const scheduledAt = combineDateTime(date, time);
-  const endAt = addMinutes(scheduledAt, service.durationMins);
+  const endAt = addMinutes(scheduledAt, totalDuration);
 
   if (scheduledAt <= new Date()) {
     return { error: "Booking harus dibuat untuk waktu yang akan datang." };
@@ -530,6 +571,12 @@ async function createBookingRecord({
       scheduledAt,
       endAt,
       notes,
+      addOnSummary: addOns.map((item) => ({ id: item.id, name: item.name, price: item.price, duration: item.durationMins })),
+      addOnNamesSnapshot: addOns.map((item) => item.name),
+      addOnPriceSnapshot: addOnPrice,
+      addOnDurationSnapshot: addOnDuration,
+      totalPriceSnapshot: totalPrice,
+      totalDurationSnapshot: totalDuration,
       customerNameSnapshot: customer.name,
       customerPhoneSnapshot: customer.phone,
       customerEmailSnapshot: customer.email,
@@ -857,6 +904,7 @@ export async function saveBusinessProfile(formData: FormData) {
   const phone = rawPhone ? normalizePhoneValue(rawPhone) : null;
   const reminderChannel =
     getNormalizedBusinessText(formData, "reminderChannel") || defaultBusiness.reminderChannel;
+  const bookingSlotInterval = parseBookingSlotInterval(getValue(formData, "bookingSlotInterval") || "15");
 
   if (!name || !slug || !category || !city || !description) {
     redirectWithError(redirectTarget, "Nama bisnis, slug, kategori, kota, dan deskripsi wajib diisi.");
@@ -864,6 +912,10 @@ export async function saveBusinessProfile(formData: FormData) {
 
   if (!(await validateUniqueSlug(slug, business.id))) {
     redirectWithError(redirectTarget, "Slug booking sudah digunakan bisnis lain.");
+  }
+
+  if (!Number.isFinite(bookingSlotInterval) || bookingSlotInterval < 5 || bookingSlotInterval % 5 !== 0) {
+    redirectWithError(redirectTarget, "Interval slot harus minimal 5 menit dan kelipatan 5 menit.");
   }
 
   if (email && !isValidEmail(email)) {
@@ -889,6 +941,7 @@ export async function saveBusinessProfile(formData: FormData) {
       description,
       bookingLink: buildBookingUrl(slug),
       reminderChannel,
+      bookingSlotInterval,
       phone,
       email,
       onboardingCompleted: true
@@ -952,7 +1005,8 @@ export async function createService(formData: FormData) {
       durationMins: duration,
       price,
       isActive: true,
-      isPopular: getBoolean(formData, "popular")
+      isPopular: getBoolean(formData, "popular"),
+      isAddon: getBoolean(formData, "isAddon")
     }
   });
 
@@ -986,7 +1040,8 @@ export async function updateService(formData: FormData) {
       durationMins: duration,
       price,
       isActive: getBoolean(formData, "active"),
-      isPopular: getBoolean(formData, "popular")
+      isPopular: getBoolean(formData, "popular"),
+      isAddon: getBoolean(formData, "isAddon")
     }
   });
 
@@ -1144,6 +1199,7 @@ export async function createBooking(formData: FormData) {
   const date = getValue(formData, "date");
   const time = getValue(formData, "time");
   const notes = getNormalizedOptionalText(formData, "notes", MAX_NOTES_LENGTH);
+  const addOnIds = getSelectedValues(formData, "addOnIds");
 
   const validationError = validateBookingInput({ serviceId, name, phone, email, date, time });
   if (validationError) {
@@ -1153,6 +1209,7 @@ export async function createBooking(formData: FormData) {
   const result = await createBookingRecord({
     businessId: business.id,
     serviceId,
+    addOnIds,
     name,
     phone,
     email,
@@ -1179,6 +1236,9 @@ export async function updateBookingStatus(formData: FormData) {
   const date = getValue(formData, "date");
   const time = getValue(formData, "time");
   const notes = getNormalizedOptionalText(formData, "notes", MAX_NOTES_LENGTH);
+  const followUpStatus = parseFollowUpStatus(getValue(formData, "followUpStatus"));
+  const followUpNote = getNormalizedOptionalText(formData, "followUpNote", MAX_NOTES_LENGTH);
+  const followUpNextActionAt = normalizeFollowUpDateTime(getValue(formData, "followUpNextActionAt"));
 
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId, businessId: business.id },
@@ -1221,6 +1281,9 @@ export async function updateBookingStatus(formData: FormData) {
     data: {
       status,
       notes,
+      followUpStatus,
+      followUpNote,
+      followUpNextActionAt,
       scheduledAt,
       endAt
     }
@@ -1267,7 +1330,8 @@ export async function createPublicBooking(formData: FormData) {
   const date = getValue(formData, "date");
   const time = getValue(formData, "time");
   const notes = getNormalizedOptionalText(formData, "notes", MAX_NOTES_LENGTH);
-  const formValues = { serviceId, customerName: name, phone, email, source, date, time, notes };
+  const addOnIds = (getValue(formData, "addOnIds") || "").split(",").map((item) => item.trim()).filter(Boolean);
+  const formValues = { serviceId, addOnIds: addOnIds.join(","), customerName: name, phone, email, source, date, time, notes };
 
   const validationError = validateBookingInput({ serviceId, name, phone, email, date, time });
   if (validationError) {
@@ -1282,6 +1346,7 @@ export async function createPublicBooking(formData: FormData) {
   const result = await createBookingRecord({
     businessId: business.id,
     serviceId,
+    addOnIds,
     name,
     phone,
     email,

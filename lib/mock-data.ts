@@ -22,7 +22,8 @@ export const businessProfile: BusinessProfile = {
   bookingLink: buildBookingUrl("temujanji-studio"),
   phone: "0812-0000-1234",
   email: "halo@janjitemu.gobisnis.cloud",
-  reminderChannel: "Email + reminder dashboard"
+  reminderChannel: "Email + reminder dashboard",
+  bookingSlotInterval: 30
 };
 
 export const services: Service[] = [
@@ -34,7 +35,8 @@ export const services: Service[] = [
     price: 95000,
     description: "Potong rambut, styling ringan, dan konsultasi cepat.",
     active: true,
-    popular: true
+    popular: true,
+    isAddon: false
   },
   {
     id: "svc-2",
@@ -43,7 +45,8 @@ export const services: Service[] = [
     duration: 60,
     price: 145000,
     description: "Perawatan rambut dengan pijat kepala dan blow ringan.",
-    active: true
+    active: true,
+    isAddon: false
   },
   {
     id: "svc-3",
@@ -52,7 +55,28 @@ export const services: Service[] = [
     duration: 30,
     price: 120000,
     description: "Facial cepat untuk customer yang datang di sela jadwal kerja.",
-    active: true
+    active: true,
+    isAddon: false
+  },
+  {
+    id: "svc-addon-1",
+    businessId: "business-mock-1",
+    name: "Hair Spa Add-on",
+    duration: 15,
+    price: 35000,
+    description: "Tambahan relaksasi singkat setelah layanan utama.",
+    active: true,
+    isAddon: true
+  },
+  {
+    id: "svc-addon-2",
+    businessId: "business-mock-1",
+    name: "Vitamin Booster",
+    duration: 15,
+    price: 25000,
+    description: "Tambahan perawatan cepat untuk hasil akhir lebih maksimal.",
+    active: true,
+    isAddon: true
   }
 ];
 
@@ -66,13 +90,19 @@ export const bookings: Booking[] = [
     email: "anisa@email.com",
     serviceId: "svc-1",
     serviceName: "Haircut Signature",
+    addOns: [{ id: "svc-addon-1", name: "Hair Spa Add-on", price: 35000, duration: 15 }],
     date: "2026-03-26",
     time: "09:00",
     endDate: "2026-03-26",
-    endTime: "09:45",
+    endTime: "10:00",
     duration: 45,
+    totalDuration: 60,
+    totalPrice: 130000,
     status: "confirmed",
-    notes: "Minta potongan pendek rapih untuk acara kantor."
+    notes: "Minta potongan pendek rapih untuk acara kantor.",
+    followUpStatus: "contacted",
+    followUpNote: "Kirim reminder H-1 via WhatsApp.",
+    followUpNextActionAt: "2026-03-25T09:00:00.000Z"
   },
   {
     id: "BK-24032",
@@ -87,7 +117,11 @@ export const bookings: Booking[] = [
     endDate: "2026-03-26",
     endTime: "12:00",
     duration: 60,
-    status: "pending"
+    totalDuration: 60,
+    totalPrice: 145000,
+    status: "pending",
+    followUpStatus: "needs-follow-up",
+    followUpNote: "Belum balas konfirmasi booking."
   },
   {
     id: "BK-24033",
@@ -102,6 +136,8 @@ export const bookings: Booking[] = [
     endDate: "2026-03-27",
     endTime: "14:30",
     duration: 30,
+    totalDuration: 30,
+    totalPrice: 120000,
     status: "rescheduled",
     notes: "Dipindah dari jam 13.00 karena bentrok."
   },
@@ -118,7 +154,12 @@ export const bookings: Booking[] = [
     endDate: "2026-03-27",
     endTime: "16:45",
     duration: 45,
-    status: "completed"
+    totalDuration: 45,
+    totalPrice: 95000,
+    status: "completed",
+    followUpStatus: "offer-sent",
+    followUpNote: "Tawarkan paket maintenance dua minggu lagi.",
+    followUpNextActionAt: "2026-03-29T10:00:00.000Z"
   }
 ];
 
@@ -136,17 +177,17 @@ export const availableDates: AvailabilityDay[] = [
   {
     label: "Hari ini",
     value: "2026-03-26",
-    slots: ["09:00", "10:00", "11:00", "13:00", "15:00"]
+    slots: ["09:00", "09:30", "10:00", "11:00", "13:00"]
   },
   {
     label: "Besok",
     value: "2026-03-27",
-    slots: ["09:30", "10:30", "14:00", "16:00"]
+    slots: ["09:00", "09:30", "10:30", "14:00", "16:00"]
   },
   {
     label: "Sabtu",
     value: "2026-03-28",
-    slots: ["08:00", "09:00", "10:00", "13:00", "15:30"]
+    slots: ["08:00", "08:30", "10:00", "13:00", "15:30"]
   }
 ];
 
@@ -183,26 +224,21 @@ export const customers: Customer[] = [
 ];
 
 export const dashboardStats: DashboardStat[] = [
-  { label: "Booking hari ini", value: "12", detail: "+3 dari kemarin" },
-  { label: "Menunggu konfirmasi", value: "4", detail: "Perlu follow up pagi ini" },
-  { label: "No-show bulan ini", value: "2", detail: "Turun 33%" },
-  { label: "Layanan terlaris", value: "Haircut", detail: "41% dari total booking" }
+  { label: "Booking hari ini", value: "2", detail: "Ada dua agenda nyata hari ini" },
+  { label: "Menunggu konfirmasi", value: "1", detail: "Perlu follow up pagi ini" },
+  { label: "Customer aktif", value: "3", detail: "Lead dan repeat customer tersimpan" },
+  { label: "Layanan terlaris", value: "Haircut Signature", detail: "Paling sering dibooking sejauh ini" }
 ];
 
 export const timelineItems: TimelineItem[] = [
   {
     time: "09:00",
     title: "Anisa Putri - Haircut Signature",
-    meta: "Confirmed • Staff utama"
+    meta: "Confirmed • Hair Spa Add-on"
   },
   {
     time: "11:00",
     title: "Raka Saputra - Creambath Relax",
-    meta: "Pending • Perlu konfirmasi"
-  },
-  {
-    time: "14:00",
-    title: "Lina Marlina - Express Facial",
-    meta: "Rescheduled • Slot baru"
+    meta: "Pending • Perlu follow up"
   }
 ];

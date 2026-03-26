@@ -5,7 +5,7 @@ export type Feedback = {
   message: string;
 };
 
-const PUBLIC_BOOKING_FIELDS = ["serviceId", "customerName", "phone", "email", "source", "date", "time", "notes"] as const;
+const PUBLIC_BOOKING_FIELDS = ["serviceId", "addOnIds", "customerName", "phone", "email", "source", "date", "time", "notes"] as const;
 
 export function normalizeRedirectTarget(path: string | null | undefined, fallback: string) {
   if (!path || !path.startsWith("/")) {

@@ -32,21 +32,21 @@ export default async function HomePage() {
     <div>
       <SiteHeader />
 
-      <section className="page-shell grid gap-10 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
-        <div className="space-y-8">
-          <div className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700">
+      <section className="page-shell grid items-center gap-8 py-10 sm:gap-10 sm:py-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:py-20 xl:gap-14 xl:py-24">
+        <div className="space-y-7 xl:space-y-8">
+          <div className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-medium text-teal-700 sm:text-sm">
             Booking dan penjadwalan sederhana untuk bisnis jasa di Indonesia
           </div>
-          <div className="space-y-5">
-            <h1 className="max-w-3xl text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
+          <div className="space-y-4 sm:space-y-5">
+            <h1 className="max-w-4xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl xl:text-[4.5rem]">
               Temujanji bantu owner UMKM menerima booking online tanpa ribet chat manual.
             </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
+            <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8 xl:text-xl">
               Landing page, booking page publik, dan dashboard owner dalam satu codebase. Cocok untuk salon, barbershop, tutor, studio, dan bisnis appointment-based lain.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/dashboard" className={buttonVariants("primary", "w-full sm:w-auto")}>
+            <Link href="/dashboard" className={buttonVariants("primary", "w-full sm:w-auto") }>
               Lihat dashboard
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -59,40 +59,40 @@ export default async function HomePage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {dashboardStats.slice(0, 3).map((stat) => (
-              <Card key={stat.label} className="p-5">
+              <Card key={stat.label} className="p-5 lg:p-6">
                 <p className="text-sm text-[var(--muted)]">{stat.label}</p>
-                <p className="mt-3 text-3xl font-semibold">{stat.value}</p>
-                <p className="mt-2 text-sm text-[var(--primary)]">{stat.detail}</p>
+                <p className="mt-3 text-2xl font-semibold sm:text-3xl">{stat.value}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--primary)]">{stat.detail}</p>
               </Card>
             ))}
           </div>
         </div>
 
-        <Card className="overflow-hidden p-4 sm:p-6">
-          <div className="rounded-[28px] bg-[#14312c] p-6 text-white">
-            <div className="flex items-center justify-between">
+        <Card className="overflow-hidden p-4 sm:p-6 xl:p-7">
+          <div className="rounded-[28px] bg-[#14312c] p-5 text-white sm:p-6 xl:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-white/60">Preview owner</p>
-                <p className="mt-2 text-2xl font-semibold">Dashboard hari ini</p>
+                <p className="mt-2 text-2xl font-semibold xl:text-[2rem]">Dashboard hari ini</p>
               </div>
-              <div className="rounded-2xl bg-white/10 px-4 py-2 text-sm">26 Maret 2026</div>
+              <div className="w-fit rounded-2xl bg-white/10 px-4 py-2 text-sm">26 Maret 2026</div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {dashboardStats.map((stat) => (
-                <div key={stat.label} className="rounded-3xl bg-white/8 p-4">
+                <div key={stat.label} className="rounded-3xl bg-white/8 p-4 xl:p-5">
                   <p className="text-sm text-white/70">{stat.label}</p>
-                  <p className="mt-3 text-3xl font-semibold">{stat.value}</p>
+                  <p className="mt-3 text-2xl font-semibold sm:text-3xl">{stat.value}</p>
                   <p className="mt-2 text-sm text-teal-200">{stat.detail}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="grid gap-4 p-4 sm:grid-cols-2">
+          <div className="grid gap-4 p-1 pt-4 sm:grid-cols-2">
             {services.map((service) => (
-              <div key={service.id} className="rounded-[24px] border border-[var(--border)] bg-white p-5">
-                <p className="font-semibold">{service.name}</p>
+              <div key={service.id} className="rounded-[24px] border border-[var(--border)] bg-white p-5 xl:p-6">
+                <p className="text-base font-semibold sm:text-lg">{service.name}</p>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{service.description}</p>
-                <div className="mt-4 flex items-center justify-between text-sm">
+                <div className="mt-4 flex items-center justify-between gap-3 text-sm">
                   <span>{service.duration} menit</span>
                   <span className="font-semibold">{formatCurrency(service.price)}</span>
                 </div>
@@ -102,27 +102,27 @@ export default async function HomePage() {
         </Card>
       </section>
 
-      <section id="fitur" className="page-shell py-12 lg:py-16">
+      <section id="fitur" className="page-shell py-10 sm:py-12 lg:py-16">
         <SectionHeading
           eyebrow="Fitur MVP"
           title="Flow inti yang langsung terasa manfaatnya buat owner"
           description="MVP ini fokus pada perjalanan paling penting: owner setup layanan, customer booking sendiri, lalu owner memproses booking dari dashboard."
         />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-3 lg:mt-10">
           {features.map(({ icon: Icon, title, description }) => (
-            <Card key={title} className="p-6">
+            <Card key={title} className="p-6 lg:p-7">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-[var(--primary)]">
                 <Icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-xl font-semibold">{title}</h3>
+              <h3 className="mt-5 text-lg font-semibold sm:text-xl">{title}</h3>
               <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{description}</p>
             </Card>
           ))}
         </div>
       </section>
 
-      <section id="cara-kerja" className="page-shell py-12 lg:py-16">
-        <Card className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="cara-kerja" className="page-shell py-10 sm:py-12 lg:py-16">
+        <Card className="grid gap-6 p-6 sm:p-8 xl:grid-cols-[0.9fr_1.1fr] xl:gap-8 xl:p-10">
           <SectionHeading
             eyebrow="Cara kerja"
             title="Ringkas untuk owner, jelas untuk customer"
@@ -135,11 +135,11 @@ export default async function HomePage() {
               "Customer memilih layanan, tanggal, dan slot kosong.",
               "Dashboard menampilkan booking pending, confirmed, dan reschedule."
             ].map((step, index) => (
-              <div key={step} className="flex gap-4 rounded-[24px] bg-white p-5">
+              <div key={step} className="flex gap-4 rounded-[24px] bg-white p-5 lg:p-6">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] text-sm font-bold text-white">
                   0{index + 1}
                 </div>
-                <p className="pt-1 text-sm leading-7 text-[var(--muted)]">{step}</p>
+                <p className="pt-1 text-sm leading-7 text-[var(--muted)] sm:text-[15px]">{step}</p>
               </div>
             ))}
           </div>
