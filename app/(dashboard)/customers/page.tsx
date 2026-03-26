@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Textarea } from "@/components/ui/textarea";
 import { getOwnerBusiness, getPaginatedCustomers } from "@/lib/data";
@@ -40,6 +41,27 @@ export default async function CustomersPage({
 
   return (
     <DashboardShell activePath="/customers" bookingLink={business.bookingLink}>
+      <PageTutorial
+        pageKey="customers"
+        pageTitle="Customer"
+        steps={[
+          {
+            title: "Gunakan halaman ini sebagai CRM ringan",
+            description: "Daftar customer membantu Anda melihat lead baru, pelanggan yang sudah pernah booking, dan repeat customer tanpa perlu alat CRM terpisah.",
+            tip: "Kalau sedang follow up promo, mulai dari customer yang booking count-nya lebih dari satu."
+          },
+          {
+            title: "Cari berdasarkan sumber atau kontak",
+            description: "Form pencarian memudahkan penyaringan berdasarkan nama, WhatsApp, email, atau sumber lead supaya segmentasi follow up lebih cepat.",
+            tip: "Isi kolom source secara konsisten agar performa channel seperti Instagram atau referral lebih mudah dibaca."
+          },
+          {
+            title: "Simpan catatan yang berguna untuk repeat order",
+            description: "Setiap kartu customer bisa diperbarui dengan data kontak, sumber, histori booking terakhir, dan catatan internal supaya layanan berikutnya terasa lebih personal.",
+            tip: "Hindari menghapus customer yang sudah punya booking agar histori tetap utuh."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
 

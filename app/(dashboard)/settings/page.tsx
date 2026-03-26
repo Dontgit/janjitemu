@@ -7,7 +7,9 @@ import { Card } from "@/components/ui/card";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Textarea } from "@/components/ui/textarea";
+import { TutorialResetButton } from "@/components/ui/tutorial-reset-button";
 import { buttonVariants } from "@/components/ui/button";
 import { getBusinessHours, getOwnerBusiness } from "@/lib/data";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
@@ -26,6 +28,27 @@ export default async function SettingsPage({
 
   return (
     <DashboardShell activePath="/settings" bookingLink={businessProfile.bookingLink}>
+      <PageTutorial
+        pageKey="settings"
+        pageTitle="Pengaturan"
+        steps={[
+          {
+            title: "Selesaikan setup profil bisnis lebih dulu",
+            description: "Di sini Anda mengatur identitas bisnis, slug booking publik, kontak, interval slot, dan buffer antar booking yang memengaruhi pengalaman customer.",
+            tip: "Perubahan slug akan mengubah alamat booking page publik, jadi cek lagi sebelum membagikannya."
+          },
+          {
+            title: "Atur jam operasional secara teliti",
+            description: "Setiap hari bisa diaktifkan atau diliburkan, lalu diisi jam buka-tutup agar availability publik mengikuti ritme bisnis yang sebenarnya.",
+            tip: "Kalau slot terasa terlalu rapat, naikkan interval atau tambahkan buffer antar booking."
+          },
+          {
+            title: "Gunakan halaman ini untuk go-live",
+            description: "Checklist MVP, preview booking page, dan tombol reset panduan ada di sini supaya onboarding workspace bisa diulang kapan saja tanpa menghapus data lain.",
+            tip: "Setelah update pengaturan penting, buka preview booking page untuk memastikan tampilannya sudah sesuai."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
 
@@ -139,6 +162,7 @@ export default async function SettingsPage({
                 <Link href={`/book/${businessProfile.slug ?? "temujanji-studio"}`} className={buttonVariants("secondary")}>
                   Preview booking page
                 </Link>
+                <TutorialResetButton />
               </div>
             </form>
           </Card>

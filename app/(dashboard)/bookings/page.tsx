@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
@@ -55,6 +56,27 @@ export default async function BookingsPage({
 
   return (
     <DashboardShell activePath="/bookings" bookingLink={business.bookingLink}>
+      <PageTutorial
+        pageKey="bookings"
+        pageTitle="Bookings"
+        steps={[
+          {
+            title: "Filter dulu kalau datanya mulai ramai",
+            description: "Bagian filter membantu mencari booking berdasarkan customer, nomor WhatsApp, layanan, status booking, dan status follow up dalam satu layar.",
+            tip: "Gunakan keyword + status untuk memisahkan booking pending yang perlu ditindak hari ini."
+          },
+          {
+            title: "Tambah booking manual saat perlu",
+            description: "Form tambah booking cocok untuk walk-in, chat WhatsApp, atau input admin. Anda bisa pilih layanan utama, add-on, jadwal, dan catatan sekaligus.",
+            tip: "Kalau customer booking lewat link publik, data biasanya akan masuk otomatis tanpa form ini."
+          },
+          {
+            title: "Kelola status dan follow up dari kartu booking",
+            description: "Setiap booking punya area update untuk ubah status, reschedule tanggal atau jam, serta mencatat next action follow up supaya proses after-sales tetap rapi.",
+            tip: "Simpan follow up note dan next action untuk memudahkan repeat booking atau penawaran berikutnya."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
         <Card className="premium-panel p-6 sm:p-8 xl:p-10">

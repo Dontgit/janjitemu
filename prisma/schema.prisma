@@ -70,22 +70,35 @@ model Business {
 }
 
 model Service {
-  id            String    @id @default(cuid())
-  businessId    String
-  name          String
-  description   String
-  durationMins  Int
-  price         Int
-  isActive      Boolean   @default(true)
-  isPopular     Boolean   @default(false)
-  isAddon       Boolean   @default(false)
-  bookings      Booking[]
-  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                     String             @id @default(cuid())
+  businessId             String
+  name                   String
+  description            String
+  durationMins           Int
+  price                  Int
+  isActive               Boolean            @default(true)
+  isPopular              Boolean            @default(false)
+  isAddon                Boolean            @default(false)
+  bookings               Booking[]
+  business               Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  allowedAddOnRules      ServiceAddonRule[] @relation("PrimaryServiceAddOns")
+  allowedPrimaryForRules ServiceAddonRule[] @relation("AddonAllowedPrimaryServices")
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   @@index([businessId, isActive])
   @@index([businessId, isAddon])
+}
+
+model ServiceAddonRule {
+  serviceId       String
+  addOnServiceId  String
+  service         Service @relation("PrimaryServiceAddOns", fields: [serviceId], references: [id], onDelete: Cascade)
+  addOnService    Service @relation("AddonAllowedPrimaryServices", fields: [addOnServiceId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@id([serviceId, addOnServiceId])
+  @@index([addOnServiceId])
 }
 
 model Customer {

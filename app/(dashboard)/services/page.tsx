@@ -7,10 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { getOwnerBusiness, getPaginatedServices } from "@/lib/data";
+import { getOwnerBusiness, getPaginatedServices, getServices } from "@/lib/data";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { buildSearchPath, getSingleSearchParam, parsePaginationParams, replaceSearchParams } from "@/lib/search-params";
 import { formatCurrency } from "@/lib/utils";
@@ -20,12 +21,13 @@ export default async function ServicesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [business, resolvedSearchParams] = await Promise.all([getOwnerBusiness(), searchParams]);
+  const [business, resolvedSearchParams, allServices] = await Promise.all([getOwnerBusiness(), searchParams, getServices()]);
   const feedback = getFeedbackFromSearchParams(resolvedSearchParams);
   const query = getSingleSearchParam(resolvedSearchParams.q).trim();
   const status = getSingleSearchParam(resolvedSearchParams.status);
   const { page, perPage } = parsePaginationParams(resolvedSearchParams);
   const services = await getPaginatedServices({ q: query, status, page, perPage });
+  const primaryServiceOptions = allServices.filter((service) => !service.isAddon);
   const currentPath = buildSearchPath(
     "/services",
     Object.fromEntries(
@@ -41,6 +43,27 @@ export default async function ServicesPage({
 
   return (
     <DashboardShell activePath="/services" bookingLink={business.bookingLink}>
+      <PageTutorial
+        pageKey="services"
+        pageTitle="Layanan"
+        steps={[
+          {
+            title: "Rawat katalog layanan di satu tempat",
+            description: "Halaman ini dipakai untuk mengatur layanan utama dan add-on, termasuk harga, durasi, deskripsi, dan status aktif untuk booking publik.",
+            tip: "Pastikan layanan yang dijual ke publik tetap aktif agar muncul di halaman booking customer."
+          },
+          {
+            title: "Tambah layanan baru dengan struktur lengkap",
+            description: "Form tambah layanan membantu menyiapkan paket baru sejak awal: nama, harga, durasi, deskripsi, label populer, sampai penanda add-on.",
+            tip: "Gunakan label populer untuk mendorong layanan unggulan tampil lebih meyakinkan."
+          },
+          {
+            title: "Edit tiap layanan tanpa pindah halaman",
+            description: "Setiap kartu layanan bisa langsung diedit untuk mengubah detail, menonaktifkan layanan, atau menandai add-on tanpa membuka modal lain.",
+            tip: "Kalau ingin tes hasilnya, lanjutkan ke preview booking page dari halaman Pengaturan."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
 
@@ -135,6 +158,29 @@ export default async function ServicesPage({
                 <input type="checkbox" name="isAddon" />
                 Ini add-on / layanan tambahan
               </label>
+              <div className="field-card rounded-[24px] p-4 md:col-span-2">
+                <p className="text-sm font-semibold">Aturan add-on per layanan utama</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                  Pilih layanan utama yang boleh memakai add-on ini. Biarkan kosong jika add-on boleh dipakai oleh semua layanan utama.
+                </p>
+                {primaryServiceOptions.length > 0 ? (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {primaryServiceOptions.map((option) => (
+                      <label key={option.id} className="field-card flex items-start gap-3 rounded-2xl px-4 py-3 text-sm">
+                        <input type="checkbox" name="allowedPrimaryServiceIds" value={option.id} />
+                        <span>
+                          <span className="block font-semibold text-[var(--foreground)]">{option.name}</span>
+                          <span className="block text-[var(--muted)]">
+                            {formatCurrency(option.price)} • {option.duration} menit
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-[var(--muted)]">Belum ada layanan utama. Tambahkan layanan utama dulu jika ingin membatasi add-on secara spesifik.</p>
+                )}
+              </div>
               <div className="md:col-span-2">
                 <Textarea name="description" placeholder="Deskripsi singkat layanan" rows={4} required />
               </div>
@@ -187,6 +233,21 @@ export default async function ServicesPage({
                   </div>
                 </div>
 
+                <div className="mt-4 grid gap-3">
+                  <div className="surface-card rounded-[20px] p-4">
+                    <p className="text-sm text-[var(--muted)]">{service.isAddon ? "Cakupan add-on" : "Add-on terkait"}</p>
+                    <p className="mt-1 font-semibold">
+                      {service.isAddon
+                        ? service.allowedPrimaryServiceNames && service.allowedPrimaryServiceNames.length > 0
+                          ? service.allowedPrimaryServiceNames.join(", ")
+                          : "Semua layanan utama"
+                        : service.linkedAddonNames && service.linkedAddonNames.length > 0
+                          ? service.linkedAddonNames.join(", ")
+                          : "Belum ada add-on khusus"}
+                    </p>
+                  </div>
+                </div>
+
                 <form action={updateService} className="mt-5 space-y-4">
                   <input type="hidden" name="redirectTo" value={currentPath} />
                   <input type="hidden" name="serviceId" value={service.id} />
@@ -228,6 +289,37 @@ export default async function ServicesPage({
                         Add-on
                       </label>
                     </div>
+                  </div>
+
+                  <div className="field-card rounded-[24px] p-4">
+                    <p className="text-sm font-semibold">Aturan add-on per layanan utama</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                      Dipakai saat layanan ini ditandai sebagai add-on. Kosongkan untuk membuat add-on tersedia di semua layanan utama.
+                    </p>
+                    {primaryServiceOptions.length > 0 ? (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {primaryServiceOptions
+                          .filter((option) => option.id !== service.id)
+                          .map((option) => (
+                            <label key={option.id} className="field-card flex items-start gap-3 rounded-2xl px-4 py-3 text-sm">
+                              <input
+                                type="checkbox"
+                                name="allowedPrimaryServiceIds"
+                                value={option.id}
+                                defaultChecked={service.allowedPrimaryServiceIds?.includes(option.id)}
+                              />
+                              <span>
+                                <span className="block font-semibold text-[var(--foreground)]">{option.name}</span>
+                                <span className="block text-[var(--muted)]">
+                                  {formatCurrency(option.price)} • {option.duration} menit
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-[var(--muted)]">Belum ada layanan utama untuk dipilih.</p>
+                    )}
                   </div>
 
                   <SubmitButton variant="secondary" className="w-full">

@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { getOwnerBusiness, getSchedulePageData } from "@/lib/data";
 import { formatLongDate } from "@/lib/utils";
 
@@ -14,6 +15,27 @@ export default async function SchedulePage() {
 
   return (
     <DashboardShell activePath="/schedule" bookingLink={business.bookingLink}>
+      <PageTutorial
+        pageKey="schedule"
+        pageTitle="Jadwal"
+        steps={[
+          {
+            title: "Baca planner mingguan dari atas ke bawah",
+            description: "Panel atas merangkum tanggal terisi, total booking, dan snapshot jam operasional agar Anda cepat melihat beban minggu berjalan.",
+            tip: "Kalau jumlah hari terjadwal mulai padat, cek tanggal yang butuh buffer atau reschedule."
+          },
+          {
+            title: "Cocokkan jam operasional dengan booking aktif",
+            description: "Kolom jam operasional membantu memastikan hari buka-tutup sudah sinkron dengan slot publik dan ritme kerja internal.",
+            tip: "Perubahan jam operasional dilakukan dari halaman Pengaturan, lalu cek kembali hasilnya di sini."
+          },
+          {
+            title: "Lihat detail per tanggal untuk spotting konflik",
+            description: "Setiap kartu tanggal menampilkan customer, status, jam, dan layanan. Ini cocok untuk membaca hari yang penuh atau memantau booking yang belum confirmed.",
+            tip: "Kalau menemukan masalah jadwal, lanjut ke halaman Bookings untuk update status atau reschedule."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">

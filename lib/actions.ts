@@ -217,6 +217,7 @@ function redirectPublicBookingWithError(
   message: string,
   values: {
     serviceId?: string;
+    addOnIds?: string;
     customerName?: string;
     phone?: string;
     email?: string | null;
@@ -230,6 +231,7 @@ function redirectPublicBookingWithError(
     withFeedback(target, { type: "error", message }),
     {
       serviceId: values.serviceId,
+      addOnIds: values.addOnIds,
       customerName: values.customerName,
       phone: values.phone,
       email: values.email ?? undefined,
@@ -525,10 +527,18 @@ async function createBookingRecord({
   time: string;
   notes: string | null;
 }) {
+  const normalizedAddOnIds = [...new Set(addOnIds)];
   const [service, addOns, business] = await Promise.all([
     prisma.service.findFirst({ where: { id: serviceId, businessId, isAddon: false } }),
-    addOnIds.length > 0
-      ? prisma.service.findMany({ where: { id: { in: addOnIds }, businessId, isAddon: true, isActive: true } })
+    normalizedAddOnIds.length > 0
+      ? prisma.service.findMany({
+          where: { id: { in: normalizedAddOnIds }, businessId, isAddon: true, isActive: true },
+          include: {
+            allowedPrimaryForRules: {
+              select: { serviceId: true }
+            }
+          }
+        })
       : Promise.resolve([]),
     prisma.business.findUnique({ where: { id: businessId }, select: { bookingBufferMins: true } })
   ]);
@@ -537,8 +547,17 @@ async function createBookingRecord({
     return { error: "Layanan tidak ditemukan untuk bisnis ini." };
   }
 
-  if (addOnIds.length !== addOns.length) {
+  if (normalizedAddOnIds.length !== addOns.length) {
     return { error: "Beberapa add-on tidak valid atau sudah tidak aktif." };
+  }
+
+  const incompatibleAddOn = addOns.find((addOn) => {
+    const allowedPrimaryServiceIds = addOn.allowedPrimaryForRules.map((rule) => rule.serviceId);
+    return allowedPrimaryServiceIds.length > 0 && !allowedPrimaryServiceIds.includes(service.id);
+  });
+
+  if (incompatibleAddOn) {
+    return { error: `${incompatibleAddOn.name} hanya tersedia untuk layanan utama tertentu.` };
   }
 
   const addOnDuration = addOns.reduce((sum, item) => sum + item.durationMins, 0);
@@ -1003,6 +1022,8 @@ export async function createService(formData: FormData) {
   const description = normalizeText(getValue(formData, "description"), MAX_DESCRIPTION_LENGTH);
   const duration = Number(getValue(formData, "duration"));
   const price = Number(getValue(formData, "price"));
+  const isAddon = getBoolean(formData, "isAddon");
+  const allowedPrimaryServiceIds = getSelectedValues(formData, "allowedPrimaryServiceIds");
 
   if (!name || !description || !Number.isFinite(duration) || !Number.isFinite(price)) {
     redirectWithError(redirectTarget, "Lengkapi nama layanan, deskripsi, durasi, dan harga.");
@@ -1016,16 +1037,43 @@ export async function createService(formData: FormData) {
     redirectWithError(redirectTarget, "Harga layanan tidak boleh negatif.");
   }
 
-  await prisma.service.create({
-    data: {
-      businessId: business.id,
-      name,
-      description,
-      durationMins: duration,
-      price,
-      isActive: true,
-      isPopular: getBoolean(formData, "popular"),
-      isAddon: getBoolean(formData, "isAddon")
+  if (isAddon && allowedPrimaryServiceIds.length > 0) {
+    const primaryServices = await prisma.service.findMany({
+      where: {
+        id: { in: allowedPrimaryServiceIds },
+        businessId: business.id,
+        isAddon: false
+      },
+      select: { id: true }
+    });
+
+    if (primaryServices.length !== allowedPrimaryServiceIds.length) {
+      redirectWithError(redirectTarget, "Aturan add-on hanya boleh diarahkan ke layanan utama yang valid.");
+    }
+  }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const service = await tx.service.create({
+      data: {
+        businessId: business.id,
+        name,
+        description,
+        durationMins: duration,
+        price,
+        isActive: true,
+        isPopular: getBoolean(formData, "popular"),
+        isAddon
+      }
+    });
+
+    if (isAddon && allowedPrimaryServiceIds.length > 0) {
+      await tx.serviceAddonRule.createMany({
+        data: allowedPrimaryServiceIds.map((primaryServiceId) => ({
+          serviceId: primaryServiceId,
+          addOnServiceId: service.id
+        })),
+        skipDuplicates: true
+      });
     }
   });
 
@@ -1042,6 +1090,8 @@ export async function updateService(formData: FormData) {
   const description = normalizeText(getValue(formData, "description"), MAX_DESCRIPTION_LENGTH);
   const duration = Number(getValue(formData, "duration"));
   const price = Number(getValue(formData, "price"));
+  const isAddon = getBoolean(formData, "isAddon");
+  const allowedPrimaryServiceIds = getSelectedValues(formData, "allowedPrimaryServiceIds");
 
   if (!serviceId || !name || !description || !Number.isFinite(duration) || !Number.isFinite(price)) {
     redirectWithError(redirectTarget, "Data layanan belum lengkap.");
@@ -1051,16 +1101,64 @@ export async function updateService(formData: FormData) {
     redirectWithError(redirectTarget, "Durasi layanan minimal 15 menit dan kelipatan 15 menit.");
   }
 
-  await prisma.service.updateMany({
+  const existingService = await prisma.service.findFirst({
     where: { id: serviceId, businessId: business.id },
-    data: {
-      name,
-      description,
-      durationMins: duration,
-      price,
-      isActive: getBoolean(formData, "active"),
-      isPopular: getBoolean(formData, "popular"),
-      isAddon: getBoolean(formData, "isAddon")
+    select: { id: true, isAddon: true }
+  });
+
+  if (!existingService) {
+    redirectWithError(redirectTarget, "Layanan tidak ditemukan.");
+  }
+
+  if (isAddon && allowedPrimaryServiceIds.length > 0) {
+    const primaryServices = await prisma.service.findMany({
+      where: {
+        businessId: business.id,
+        isAddon: false,
+        id: { in: allowedPrimaryServiceIds, not: serviceId }
+      },
+      select: { id: true }
+    });
+
+    if (primaryServices.length !== allowedPrimaryServiceIds.length) {
+      redirectWithError(redirectTarget, "Aturan add-on hanya boleh diarahkan ke layanan utama yang valid.");
+    }
+  }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await tx.service.update({
+      where: { id: serviceId },
+      data: {
+        name,
+        description,
+        durationMins: duration,
+        price,
+        isActive: getBoolean(formData, "active"),
+        isPopular: getBoolean(formData, "popular"),
+        isAddon
+      }
+    });
+
+    if (existingService.isAddon || isAddon) {
+      await tx.serviceAddonRule.deleteMany({
+        where: { addOnServiceId: serviceId }
+      });
+    }
+
+    if (!existingService.isAddon && isAddon) {
+      await tx.serviceAddonRule.deleteMany({
+        where: { serviceId }
+      });
+    }
+
+    if (isAddon && allowedPrimaryServiceIds.length > 0) {
+      await tx.serviceAddonRule.createMany({
+        data: allowedPrimaryServiceIds.map((primaryServiceId) => ({
+          serviceId: primaryServiceId,
+          addOnServiceId: serviceId
+        })),
+        skipDuplicates: true
+      });
     }
   });
 

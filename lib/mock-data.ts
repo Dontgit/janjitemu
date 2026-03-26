@@ -37,7 +37,9 @@ export const services: Service[] = [
     description: "Potong rambut, styling ringan, dan konsultasi cepat.",
     active: true,
     popular: true,
-    isAddon: false
+    isAddon: false,
+    linkedAddonIds: ["svc-addon-1", "svc-addon-2"],
+    linkedAddonNames: ["Hair Spa Add-on", "Vitamin Booster"]
   },
   {
     id: "svc-2",
@@ -47,7 +49,9 @@ export const services: Service[] = [
     price: 145000,
     description: "Perawatan rambut dengan pijat kepala dan blow ringan.",
     active: true,
-    isAddon: false
+    isAddon: false,
+    linkedAddonIds: ["svc-addon-1"],
+    linkedAddonNames: ["Hair Spa Add-on"]
   },
   {
     id: "svc-3",
@@ -57,7 +61,9 @@ export const services: Service[] = [
     price: 120000,
     description: "Facial cepat untuk customer yang datang di sela jadwal kerja.",
     active: true,
-    isAddon: false
+    isAddon: false,
+    linkedAddonIds: ["svc-addon-2"],
+    linkedAddonNames: ["Vitamin Booster"]
   },
   {
     id: "svc-addon-1",
@@ -67,7 +73,9 @@ export const services: Service[] = [
     price: 35000,
     description: "Tambahan relaksasi singkat setelah layanan utama.",
     active: true,
-    isAddon: true
+    isAddon: true,
+    allowedPrimaryServiceIds: ["svc-1", "svc-2"],
+    allowedPrimaryServiceNames: ["Haircut Signature", "Creambath Relax"]
   },
   {
     id: "svc-addon-2",
@@ -77,7 +85,9 @@ export const services: Service[] = [
     price: 25000,
     description: "Tambahan perawatan cepat untuk hasil akhir lebih maksimal.",
     active: true,
-    isAddon: true
+    isAddon: true,
+    allowedPrimaryServiceIds: ["svc-1", "svc-3"],
+    allowedPrimaryServiceNames: ["Haircut Signature", "Express Facial"]
   }
 ];
 

@@ -26,6 +26,10 @@ export type Service = {
   active?: boolean;
   popular?: boolean;
   isAddon?: boolean;
+  allowedPrimaryServiceIds?: string[];
+  allowedPrimaryServiceNames?: string[];
+  linkedAddonIds?: string[];
+  linkedAddonNames?: string[];
 };
 
 export type BookingAddOn = {

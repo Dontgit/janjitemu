@@ -157,6 +157,48 @@ function parseBookingAddOns(value: Prisma.JsonValue | null | undefined): Booking
     .filter(Boolean) as BookingAddOn[];
 }
 
+function mapServiceWithRules(
+  service: {
+    id: string;
+    businessId: string;
+    name: string;
+    durationMins: number;
+    price: number;
+    description: string;
+    isActive: boolean;
+    isPopular: boolean;
+    isAddon: boolean;
+    allowedPrimaryForRules?: Array<{
+      service: {
+        id: string;
+        name: string;
+      };
+    }>;
+    allowedAddOnRules?: Array<{
+      addOnService: {
+        id: string;
+        name: string;
+      };
+    }>;
+  }
+): Service {
+  return {
+    id: service.id,
+    businessId: service.businessId,
+    name: service.name,
+    duration: service.durationMins,
+    price: service.price,
+    description: service.description,
+    active: service.isActive,
+    popular: service.isPopular,
+    isAddon: service.isAddon,
+    allowedPrimaryServiceIds: service.allowedPrimaryForRules?.map((rule) => rule.service.id) ?? [],
+    allowedPrimaryServiceNames: service.allowedPrimaryForRules?.map((rule) => rule.service.name) ?? [],
+    linkedAddonIds: service.allowedAddOnRules?.map((rule) => rule.addOnService.id) ?? [],
+    linkedAddonNames: service.allowedAddOnRules?.map((rule) => rule.addOnService.name) ?? []
+  };
+}
+
 function buildBookingFromDb(booking: {
   id: string;
   businessId: string;
@@ -469,20 +511,26 @@ export async function getServices(businessId?: string): Promise<Service[]> {
 
     const items = await prisma.service.findMany({
       where: { businessId: business.id },
+      include: {
+        allowedPrimaryForRules: {
+          include: {
+            service: {
+              select: { id: true, name: true }
+            }
+          }
+        },
+        allowedAddOnRules: {
+          include: {
+            addOnService: {
+              select: { id: true, name: true }
+            }
+          }
+        }
+      },
       orderBy: [{ isPopular: "desc" }, { createdAt: "asc" }]
     });
 
-    return items.map((service) => ({
-      id: service.id,
-      businessId: service.businessId,
-      name: service.name,
-      duration: service.durationMins,
-      price: service.price,
-      description: service.description,
-      active: service.isActive,
-      popular: service.isPopular,
-      isAddon: service.isAddon
-    }));
+    return items.map(mapServiceWithRules);
   }, fallbackServices);
 }
 
@@ -794,6 +842,22 @@ export async function getPaginatedServices({
       prisma.service.count({ where }),
       prisma.service.findMany({
         where,
+        include: {
+          allowedPrimaryForRules: {
+            include: {
+              service: {
+                select: { id: true, name: true }
+              }
+            }
+          },
+          allowedAddOnRules: {
+            include: {
+              addOnService: {
+                select: { id: true, name: true }
+              }
+            }
+          }
+        },
         orderBy: [{ isPopular: "desc" }, { createdAt: "asc" }],
         skip: (safePage - 1) * perPage,
         take: perPage
@@ -806,23 +870,29 @@ export async function getPaginatedServices({
     if (normalizedPage !== safePage) {
       const normalizedItems = await prisma.service.findMany({
         where,
+        include: {
+          allowedPrimaryForRules: {
+            include: {
+              service: {
+                select: { id: true, name: true }
+              }
+            }
+          },
+          allowedAddOnRules: {
+            include: {
+              addOnService: {
+                select: { id: true, name: true }
+              }
+            }
+          }
+        },
         orderBy: [{ isPopular: "desc" }, { createdAt: "asc" }],
         skip: (normalizedPage - 1) * perPage,
         take: perPage
       });
 
       return buildPaginatedResult(
-        normalizedItems.map((service) => ({
-          id: service.id,
-          businessId: service.businessId,
-          name: service.name,
-          duration: service.durationMins,
-          price: service.price,
-          description: service.description,
-          active: service.isActive,
-          popular: service.isPopular,
-          isAddon: service.isAddon
-        })),
+        normalizedItems.map(mapServiceWithRules),
         total,
         normalizedPage,
         perPage
@@ -830,17 +900,7 @@ export async function getPaginatedServices({
     }
 
     return buildPaginatedResult(
-      items.map((service) => ({
-        id: service.id,
-        businessId: service.businessId,
-        name: service.name,
-        duration: service.durationMins,
-        price: service.price,
-        description: service.description,
-        active: service.isActive,
-        popular: service.isPopular,
-          isAddon: service.isAddon
-        })),
+      items.map(mapServiceWithRules),
       total,
       normalizedPage,
       perPage
@@ -1045,6 +1105,14 @@ export async function getPublicPageData(slug: string) {
   ]);
   const activeServices = services.filter((service) => (service.active ?? true) && !service.isAddon);
   const visibleServices = activeServices.length > 0 ? activeServices : services.filter((service) => !service.isAddon);
+  const visibleAddOns = services.filter((service) => {
+    if (!service.isAddon || !(service.active ?? true)) {
+      return false;
+    }
+
+    const allowedFor = service.allowedPrimaryServiceIds ?? [];
+    return allowedFor.length === 0 || allowedFor.some((id) => visibleServices.some((primary) => primary.id === id));
+  });
   const availabilityByService = Object.fromEntries(
     visibleServices.map((service) => [
       service.id,
@@ -1055,13 +1123,14 @@ export async function getPublicPageData(slug: string) {
 
   return {
     business,
-    services: visibleServices,
+    services: [...visibleServices, ...visibleAddOns],
     availability: visibleServices[0] ? availabilityByService[visibleServices[0].id] ?? [] : availableDates,
     availabilityByService,
     guidance: [
       `${openDays} hari operasional aktif per minggu`,
       `Interval slot ${business.bookingSlotInterval ?? 15} menit`,
       business.bookingBufferMins ? `Buffer antar booking ${business.bookingBufferMins} menit` : "Tanpa buffer tambahan antar booking",
+      visibleAddOns.length > 0 ? `${visibleAddOns.length} add-on siap dijual silang` : "Belum ada add-on aktif untuk upsell",
       business.phone ? `Konfirmasi tambahan bisa melalui ${business.phone}` : "Siapkan nomor aktif agar konfirmasi lebih cepat",
       visibleServices.length > 0 ? `${visibleServices.length} layanan siap dibooking` : "Tambahkan layanan aktif agar halaman publik lebih berguna"
     ]

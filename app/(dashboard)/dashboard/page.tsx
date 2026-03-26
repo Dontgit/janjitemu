@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
+import { PageTutorial } from "@/components/ui/page-tutorial";
 import { StatCard } from "@/components/ui/stat-card";
 import { buttonVariants } from "@/components/ui/button";
 import { getDashboardPageData } from "@/lib/data";
@@ -37,6 +38,27 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell activePath="/dashboard" bookingLink={business.bookingLink}>
+      <PageTutorial
+        pageKey="dashboard"
+        pageTitle="Dashboard"
+        steps={[
+          {
+            title: "Mulai dari ringkasan utama",
+            description: "Bagian overview menyorot metrik penting, booking terbaru, dan agenda hari ini supaya Anda cepat tahu apa yang perlu ditindak tanpa pindah halaman.",
+            tip: "Kalau baru buka workspace, cek panel agenda hari ini dan tombol Kelola booking lebih dulu."
+          },
+          {
+            title: "Gunakan quick actions & health panel",
+            description: "Kartu quick actions membantu membaca kondisi bisnis: booking pending, jadwal padat, dan customer aktif. Ini cocok untuk scanning cepat tiap pagi atau sore.",
+            tip: "Panel highlights cocok untuk melihat sinyal performa ringan sebelum follow up customer."
+          },
+          {
+            title: "Lompat ke eksekusi yang relevan",
+            description: "Dari halaman ini Anda bisa langsung masuk ke daftar booking, membuka booking page publik, atau mengecek customer terbaru tanpa kehilangan konteks.",
+            tip: "Kalau ingin link publik siap dibagikan, lanjutkan juga ke halaman Pengaturan."
+          }
+        ]}
+      />
       <div className="space-y-6 xl:space-y-7">
         <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
