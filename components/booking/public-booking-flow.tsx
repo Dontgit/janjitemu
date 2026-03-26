@@ -8,13 +8,30 @@ import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AvailabilityDay, BusinessProfile, PublicBookingFormValues, Service } from "@/lib/types";
-import { formatCurrency, formatLongDate } from "@/lib/utils";
+import { formatCurrency, formatDurationLabel, formatLongDate } from "@/lib/utils";
 
 const STEPS = [
   { id: 1, title: "Pilih layanan", detail: "Service, add-on, tanggal, jam" },
   { id: 2, title: "Data customer", detail: "Kontak & catatan" },
   { id: 3, title: "Ringkasan", detail: "Cek ulang lalu kirim" }
 ] as const;
+
+function getEstimatedEndTime(date: string, time: string, totalDuration: number) {
+  if (!date || !time || totalDuration <= 0) {
+    return null;
+  }
+
+  const startAt = new Date(`${date}T${time}:00+07:00`);
+  if (Number.isNaN(startAt.getTime())) {
+    return null;
+  }
+
+  const endAt = new Date(startAt.getTime() + totalDuration * 60_000);
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(endAt);
+}
 
 export function PublicBookingFlow({
   slug,
@@ -78,6 +95,7 @@ export function PublicBookingFlow({
 
   const totalDuration = (selectedService?.duration ?? 0) + selectedAddOns.reduce((sum, item) => sum + item.duration, 0);
   const totalPrice = (selectedService?.price ?? 0) + selectedAddOns.reduce((sum, item) => sum + item.price, 0);
+  const estimatedEndTime = getEstimatedEndTime(selectedDate, selectedTime, totalDuration);
 
   useEffect(() => {
     if (mainServices.length > 0 && !mainServices.some((service) => service.id === selectedServiceId)) {
@@ -118,7 +136,7 @@ export function PublicBookingFlow({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_380px]">
+    <div className="grid gap-6 pb-28 sm:pb-0 xl:grid-cols-[minmax(0,1.12fr)_380px]">
       <Card className="premium-panel p-5 sm:p-7 xl:p-8">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -308,10 +326,18 @@ export function PublicBookingFlow({
                       Belum ada slot untuk tanggal ini. Pilih tanggal lain atau hubungi bisnis untuk reschedule manual.
                     </div>
                   )}
+                  <div className="surface-card rounded-[20px] p-4">
+                    <p className="text-sm text-[var(--muted)]">Estimasi selesai</p>
+                    <p className="mt-1 font-semibold">{estimatedEndTime ?? "Pilih jam dulu"}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      Total durasi {formatDurationLabel(totalDuration)}
+                      {business.bookingBufferMins ? ` • buffer bisnis ${business.bookingBufferMins} menit antar booking` : ""}
+                    </p>
+                  </div>
                 </div>
               </section>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="hidden flex-wrap gap-3 sm:flex">
                 <button type="button" className="rounded-2xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50" disabled={!stepOneReady} onClick={() => setStep(2)}>
                   Lanjut ke data customer
                 </button>
@@ -347,7 +373,7 @@ export function PublicBookingFlow({
                 <span className="form-label">Catatan tambahan</span>
                 <Textarea name="notes" rows={4} placeholder="Contoh: prefer stylist tertentu atau punya kebutuhan khusus." value={notes} onChange={(event) => setNotes(event.target.value)} />
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="hidden flex-wrap gap-3 sm:flex">
                 <button type="button" className="rounded-2xl border border-[var(--border)] px-5 py-3 text-sm font-semibold" onClick={() => setStep(1)}>
                   Kembali
                 </button>
@@ -372,6 +398,7 @@ export function PublicBookingFlow({
                 <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Jadwal</p>
                   <p className="mt-1 font-semibold">{selectedDate ? `${formatLongDate(selectedDate)} • ${selectedTime}` : "Belum dipilih"}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{estimatedEndTime ? `Estimasi selesai ${estimatedEndTime}` : "Estimasi selesai muncul setelah jam dipilih"}</p>
                 </div>
                 <div className="surface-card rounded-[22px] p-4 md:col-span-2">
                   <p className="text-sm text-[var(--muted)]">Add-on</p>
@@ -396,10 +423,10 @@ export function PublicBookingFlow({
                 <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Estimasi total</p>
                   <p className="mt-1 font-semibold">{formatCurrency(totalPrice)}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{totalDuration} menit</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{formatDurationLabel(totalDuration)}</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="hidden flex-wrap gap-3 sm:flex">
                 <button type="button" className="rounded-2xl border border-[var(--border)] px-5 py-3 text-sm font-semibold" onClick={() => setStep(2)}>
                   Kembali
                 </button>
@@ -409,6 +436,44 @@ export function PublicBookingFlow({
               </div>
             </section>
           ) : null}
+
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-16px_40px_rgba(20,49,44,0.12)] backdrop-blur sm:hidden">
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {step === 1 ? "Pilih slot" : step === 2 ? "Isi data customer" : "Konfirmasi booking"}
+                </p>
+                <p className="truncate text-xs text-[var(--muted)]">
+                  {selectedTime && estimatedEndTime ? `${selectedTime} - ${estimatedEndTime}` : "Lanjutkan step booking"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {step > 1 ? (
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm font-semibold"
+                    onClick={() => setStep(step === 3 ? 2 : 1)}
+                  >
+                    Kembali
+                  </button>
+                ) : null}
+                {step < 3 ? (
+                  <button
+                    type="button"
+                    className="rounded-2xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                    disabled={step === 1 ? !stepOneReady : !stepTwoReady}
+                    onClick={() => setStep(step === 1 ? 2 : 3)}
+                  >
+                    {step === 1 ? "Lanjut" : "Review"}
+                  </button>
+                ) : (
+                  <SubmitButton className="w-auto" disabled={!stepOneReady || !stepTwoReady}>
+                    Konfirmasi
+                  </SubmitButton>
+                )}
+              </div>
+            </div>
+          </div>
         </form>
       </Card>
 
@@ -437,12 +502,21 @@ export function PublicBookingFlow({
             <div className="grid grid-cols-2 gap-3">
               <div className="surface-card rounded-[20px] p-4">
                 <p className="text-sm text-[var(--muted)]">Total durasi</p>
-                <p className="font-semibold">{totalDuration ? `${totalDuration} menit` : "-"}</p>
+                <p className="font-semibold">{totalDuration ? formatDurationLabel(totalDuration) : "-"}</p>
               </div>
               <div className="surface-card rounded-[20px] p-4">
                 <p className="text-sm text-[var(--muted)]">Estimasi biaya</p>
                 <p className="font-semibold">{totalPrice ? formatCurrency(totalPrice) : "-"}</p>
               </div>
+            </div>
+            <div className="surface-card rounded-[20px] p-4">
+              <p className="text-sm text-[var(--muted)]">Estimasi selesai</p>
+              <p className="font-semibold">{estimatedEndTime ?? "Pilih tanggal dan jam dulu"}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {business.bookingBufferMins
+                  ? `Bisnis memberi buffer ${business.bookingBufferMins} menit antar booking.`
+                  : "Tidak ada buffer tambahan antar booking."}
+              </p>
             </div>
             <div className="surface-card rounded-[20px] p-4">
               <p className="text-sm text-[var(--muted)]">Nama customer</p>
@@ -456,7 +530,10 @@ export function PublicBookingFlow({
           <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
             {[
               { icon: Store, label: business.category || "Bisnis jasa" },
-              { icon: CalendarClock, label: `${business.reminderChannel || "Reminder dashboard"} • interval slot ${business.bookingSlotInterval ?? 15} menit` },
+              {
+                icon: CalendarClock,
+                label: `${business.reminderChannel || "Reminder dashboard"} • interval ${business.bookingSlotInterval ?? 15} menit${business.bookingBufferMins ? ` • buffer ${business.bookingBufferMins} menit` : ""}`
+              },
               { icon: MessageCircleMore, label: business.phone || "Kontak bisnis akan tampil setelah setup selesai" },
               { icon: CircleCheckBig, label: "Status awal booking: pending confirmation" }
             ].map(({ icon: Icon, label }) => (
@@ -477,6 +554,7 @@ export function PublicBookingFlow({
           </ul>
         </Card>
       </div>
+
     </div>
   );
 }

@@ -23,7 +23,8 @@ export const businessProfile: BusinessProfile = {
   phone: "0812-0000-1234",
   email: "halo@janjitemu.gobisnis.cloud",
   reminderChannel: "Email + reminder dashboard",
-  bookingSlotInterval: 30
+  bookingSlotInterval: 30,
+  bookingBufferMins: 15
 };
 
 export const services: Service[] = [

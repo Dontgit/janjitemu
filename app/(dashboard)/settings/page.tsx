@@ -85,12 +85,16 @@ export default async function SettingsPage({
                   <Input name="reminderChannel" defaultValue={businessProfile.reminderChannel} placeholder="Reminder channel" />
                   <Input name="slug" defaultValue={businessProfile.slug} placeholder="Slug booking" required />
                   <Input name="bookingSlotInterval" type="number" min="5" step="5" defaultValue={businessProfile.bookingSlotInterval ?? 15} placeholder="Interval slot booking (menit)" required />
+                  <Input name="bookingBufferMins" type="number" min="0" step="5" defaultValue={businessProfile.bookingBufferMins ?? 0} placeholder="Buffer antar booking (menit)" required />
                   <Input name="phone" defaultValue={businessProfile.phone} placeholder="Nomor WhatsApp bisnis" />
                   <div className="sm:col-span-2">
                     <Input name="email" defaultValue={businessProfile.email} type="email" placeholder="Email bisnis" />
                   </div>
                   <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
                     Link booking publik akan dibentuk otomatis menjadi <span className="font-semibold text-[var(--foreground)]">temujanji.app/book/{businessProfile.slug ?? "temujanji-studio"}</span> setelah disimpan.
+                  </div>
+                  <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
+                    Buffer dipakai untuk memberi jeda antar booking saat cek ketersediaan publik dan bentrok internal. Isi <span className="font-semibold text-[var(--foreground)]">0</span> bila tidak perlu jeda tambahan.
                   </div>
                   <div className="sm:col-span-2">
                     <Textarea name="description" defaultValue={businessProfile.description} rows={5} placeholder="Deskripsi bisnis" />
@@ -168,6 +172,10 @@ export default async function SettingsPage({
                 <div className="soft-stat rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Interval slot</p>
                   <p className="mt-2 text-2xl font-semibold">{businessProfile.bookingSlotInterval ?? 15}m</p>
+                </div>
+                <div className="soft-stat rounded-[22px] p-4 sm:col-span-2">
+                  <p className="text-sm text-[var(--muted)]">Buffer booking</p>
+                  <p className="mt-2 text-2xl font-semibold">{businessProfile.bookingBufferMins ?? 0}m</p>
                 </div>
               </div>
             </Card>

@@ -1,0 +1,2 @@
+ALTER TABLE "Business"
+ADD COLUMN "bookingBufferMins" INTEGER NOT NULL DEFAULT 0;

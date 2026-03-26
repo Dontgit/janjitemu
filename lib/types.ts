@@ -81,6 +81,7 @@ export type BusinessProfile = {
   email?: string;
   reminderChannel: string;
   bookingSlotInterval?: number;
+  bookingBufferMins?: number;
   onboardingCompleted?: boolean;
 };
 

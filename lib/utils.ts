@@ -34,3 +34,22 @@ export function formatDateTimeLabel(value: string | null | undefined) {
     minute: "2-digit"
   }).format(new Date(value));
 }
+
+export function formatDurationLabel(minutes: number | null | undefined) {
+  if (!minutes || minutes <= 0) {
+    return "0 menit";
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+
+  if (hours === 0) {
+    return `${restMinutes} menit`;
+  }
+
+  if (restMinutes === 0) {
+    return `${hours} jam`;
+  }
+
+  return `${hours} jam ${restMinutes} menit`;
+}

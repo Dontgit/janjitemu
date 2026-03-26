@@ -31,11 +31,13 @@ export default async function BookingsPage({
   const addOnServices = services.filter((service) => service.isAddon);
   const query = getSingleSearchParam(resolvedSearchParams.q).trim();
   const status = getSingleSearchParam(resolvedSearchParams.status);
+  const followUpStatus = getSingleSearchParam(resolvedSearchParams.followUpStatus);
   const serviceFilter = getSingleSearchParam(resolvedSearchParams.serviceId);
   const { page, perPage } = parsePaginationParams(resolvedSearchParams);
   const paginatedBookings = await getPaginatedBookings({
     q: query,
     status,
+    followUpStatus,
     serviceId: serviceFilter,
     page,
     perPage
@@ -84,9 +86,9 @@ export default async function BookingsPage({
                 Filter
               </div>
               <p className="mt-3 text-lg font-semibold">Cari & filter booking</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Filter berdasarkan customer, nomor WhatsApp, layanan, atau status booking.</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">Filter berdasarkan customer, nomor WhatsApp, layanan, status booking, atau status follow up.</p>
             </div>
-            <form className="grid gap-3 lg:min-w-[720px] lg:grid-cols-[minmax(0,1fr)_170px_220px_auto]" method="get">
+            <form className="grid gap-3 lg:min-w-[860px] lg:grid-cols-[minmax(0,1fr)_170px_190px_220px_auto]" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={paginatedBookings.perPage} />
               <div className="form-field">
@@ -103,6 +105,18 @@ export default async function BookingsPage({
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                   <option value="no-show">No-show</option>
+                </Select>
+              </div>
+              <div className="form-field">
+                <span className="form-label">Follow up</span>
+                <Select name="followUpStatus" defaultValue={followUpStatus}>
+                  <option value="">Semua follow up</option>
+                  <option value="none">Belum perlu</option>
+                  <option value="needs-follow-up">Perlu follow up</option>
+                  <option value="contacted">Sudah dihubungi</option>
+                  <option value="offer-sent">Penawaran dikirim</option>
+                  <option value="won">Deal / berhasil</option>
+                  <option value="lost">Belum berhasil</option>
                 </Select>
               </div>
               <div className="form-field">
@@ -235,6 +249,7 @@ export default async function BookingsPage({
                       <div className="surface-card rounded-[20px] px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Jadwal</p>
                         <p className="mt-1 text-sm font-medium">{booking.date} • {booking.time}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">{booking.endTime ? `Selesai estimasi ${booking.endTime}` : "Estimasi selesai belum tersedia"}</p>
                       </div>
                       <div className="surface-card rounded-[20px] px-4 py-3 sm:col-span-2 lg:col-span-1">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Kontak</p>

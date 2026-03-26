@@ -283,6 +283,11 @@ function parseBookingSlotInterval(value: string) {
   return Number.isFinite(parsed) ? parsed : NaN;
 }
 
+function parseBookingBuffer(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 function parseFollowUpStatus(value: string) {
   switch (value) {
     case "needs-follow-up": return "NEEDS_FOLLOW_UP";
@@ -413,11 +418,13 @@ async function findConflictingBooking({
   businessId,
   scheduledAt,
   endAt,
+  bufferMins = 0,
   ignoredBookingId
 }: {
   businessId: string;
   scheduledAt: Date;
   endAt: Date;
+  bufferMins?: number;
   ignoredBookingId?: string;
 }) {
   return prisma.booking.findFirst({
@@ -425,8 +432,8 @@ async function findConflictingBooking({
       businessId,
       id: ignoredBookingId ? { not: ignoredBookingId } : undefined,
       status: { not: "CANCELLED" },
-      scheduledAt: { lt: endAt },
-      endAt: { gt: scheduledAt }
+      scheduledAt: { lt: addMinutes(endAt, bufferMins) },
+      endAt: { gt: addMinutes(scheduledAt, -bufferMins) }
     },
     orderBy: { scheduledAt: "asc" }
   });
@@ -518,11 +525,12 @@ async function createBookingRecord({
   time: string;
   notes: string | null;
 }) {
-  const [service, addOns] = await Promise.all([
+  const [service, addOns, business] = await Promise.all([
     prisma.service.findFirst({ where: { id: serviceId, businessId, isAddon: false } }),
     addOnIds.length > 0
       ? prisma.service.findMany({ where: { id: { in: addOnIds }, businessId, isAddon: true, isActive: true } })
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    prisma.business.findUnique({ where: { id: businessId }, select: { bookingBufferMins: true } })
   ]);
 
   if (!service) {
@@ -537,6 +545,7 @@ async function createBookingRecord({
   const addOnPrice = addOns.reduce((sum, item) => sum + item.price, 0);
   const totalDuration = service.durationMins + addOnDuration;
   const totalPrice = service.price + addOnPrice;
+  const bookingBufferMins = business?.bookingBufferMins ?? 0;
   const scheduledAt = combineDateTime(date, time);
   const endAt = addMinutes(scheduledAt, totalDuration);
 
@@ -549,9 +558,13 @@ async function createBookingRecord({
     return { error: businessHoursError };
   }
 
-  const conflict = await findConflictingBooking({ businessId, scheduledAt, endAt });
+  const conflict = await findConflictingBooking({ businessId, scheduledAt, endAt, bufferMins: bookingBufferMins });
   if (conflict) {
-    return { error: "Slot tersebut sudah bentrok dengan booking lain. Pilih jam lain." };
+    return {
+      error: bookingBufferMins > 0
+        ? `Slot tersebut bentrok dengan booking lain atau buffer ${bookingBufferMins} menit. Pilih jam lain.`
+        : "Slot tersebut sudah bentrok dengan booking lain. Pilih jam lain."
+    };
   }
 
   const customer = await createOrUpdateCustomerForBusiness({
@@ -905,6 +918,7 @@ export async function saveBusinessProfile(formData: FormData) {
   const reminderChannel =
     getNormalizedBusinessText(formData, "reminderChannel") || defaultBusiness.reminderChannel;
   const bookingSlotInterval = parseBookingSlotInterval(getValue(formData, "bookingSlotInterval") || "15");
+  const bookingBufferMins = parseBookingBuffer(getValue(formData, "bookingBufferMins") || "0");
 
   if (!name || !slug || !category || !city || !description) {
     redirectWithError(redirectTarget, "Nama bisnis, slug, kategori, kota, dan deskripsi wajib diisi.");
@@ -916,6 +930,10 @@ export async function saveBusinessProfile(formData: FormData) {
 
   if (!Number.isFinite(bookingSlotInterval) || bookingSlotInterval < 5 || bookingSlotInterval % 5 !== 0) {
     redirectWithError(redirectTarget, "Interval slot harus minimal 5 menit dan kelipatan 5 menit.");
+  }
+
+  if (!Number.isFinite(bookingBufferMins) || bookingBufferMins < 0 || bookingBufferMins % 5 !== 0) {
+    redirectWithError(redirectTarget, "Buffer booking harus 0 atau kelipatan 5 menit.");
   }
 
   if (email && !isValidEmail(email)) {
@@ -942,6 +960,7 @@ export async function saveBusinessProfile(formData: FormData) {
       bookingLink: buildBookingUrl(slug),
       reminderChannel,
       bookingSlotInterval,
+      bookingBufferMins,
       phone,
       email,
       onboardingCompleted: true
@@ -1254,7 +1273,7 @@ export async function updateBookingStatus(formData: FormData) {
   }
 
   const scheduledAt = combineDateTime(date, time);
-  const endAt = addMinutes(scheduledAt, booking.service.durationMins);
+  const endAt = addMinutes(scheduledAt, booking.totalDurationSnapshot || booking.service.durationMins);
 
   if (scheduledAt <= new Date()) {
     redirectWithError(redirectTarget, "Waktu booking harus berada di masa depan.");
@@ -1269,11 +1288,17 @@ export async function updateBookingStatus(formData: FormData) {
     businessId: business.id,
     scheduledAt,
     endAt,
+    bufferMins: booking.business.bookingBufferMins ?? 0,
     ignoredBookingId: booking.id
   });
 
   if (conflict) {
-    redirectWithError(redirectTarget, "Perubahan jadwal bentrok dengan booking lain.");
+    redirectWithError(
+      redirectTarget,
+      booking.business.bookingBufferMins
+        ? `Perubahan jadwal bentrok dengan booking lain atau buffer ${booking.business.bookingBufferMins} menit.`
+        : "Perubahan jadwal bentrok dengan booking lain."
+    );
   }
 
   await prisma.booking.update({
