@@ -15,6 +15,7 @@ import {
 import {
   AvailabilityDay,
   Booking,
+  BookingDetailData,
   BookingSummary,
   BookingStatus,
   BusinessHour,
@@ -22,7 +23,9 @@ import {
   Customer,
   DashboardHighlight,
   DashboardStat,
+  FollowUpBoardColumn,
   PaginatedResult,
+  ReminderItem,
   Service,
   TimelineItem,
   BookingAddOn,
@@ -219,6 +222,8 @@ function buildBookingFromDb(booking: {
   followUpStatus?: string | null;
   followUpNote?: string | null;
   followUpNextActionAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }) {
   return {
     id: booking.id,
@@ -241,8 +246,60 @@ function buildBookingFromDb(booking: {
     notes: booking.notes ?? undefined,
     followUpStatus: mapFollowUpStatus(booking.followUpStatus),
     followUpNote: booking.followUpNote ?? null,
-    followUpNextActionAt: booking.followUpNextActionAt?.toISOString() ?? null
+    followUpNextActionAt: booking.followUpNextActionAt?.toISOString() ?? null,
+    createdAt: booking.createdAt?.toISOString() ?? null,
+    updatedAt: booking.updatedAt?.toISOString() ?? null
   } satisfies Booking;
+}
+
+function sortBookingsBySchedule(items: Booking[]) {
+  return [...items].sort(
+    (a, b) => combineDateTime(a.date, a.time).getTime() - combineDateTime(b.date, b.time).getTime()
+  );
+}
+
+function getBookingDateTime(booking: Booking) {
+  return combineDateTime(booking.date, booking.time);
+}
+
+function isSameDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function getFollowUpColumnMeta(status: FollowUpStatus) {
+  switch (status) {
+    case "needs-follow-up":
+      return { label: "Perlu follow up", description: "Booking yang masih menunggu sentuhan pertama." };
+    case "contacted":
+      return { label: "Sudah dihubungi", description: "Customer sudah dihubungi, tinggal ditarik ke langkah berikutnya." };
+    case "offer-sent":
+      return { label: "Penawaran dikirim", description: "Harga atau paket sudah dilempar, tinggal dipantau responsnya." };
+    case "won":
+      return { label: "Deal", description: "Follow up berhasil dan siap dijaga retensinya." };
+    case "lost":
+      return { label: "Belum berhasil", description: "Lead belum jadi, tapi konteksnya masih perlu tercatat." };
+    default:
+      return { label: "Belum perlu", description: "Belum ada follow up aktif." };
+  }
+}
+
+function getReminderPriority(booking: Booking, dueAt: Date, type: ReminderItem["type"]): ReminderItem["priority"] {
+  const now = new Date();
+  const diffHours = (dueAt.getTime() - now.getTime()) / 3_600_000;
+
+  if (type === "follow-up") {
+    if (diffHours <= 0 || booking.followUpStatus === "needs-follow-up") return "high";
+    if (diffHours <= 24) return "medium";
+    return "low";
+  }
+
+  if (booking.status === "pending" && diffHours <= 24) return "high";
+  if (diffHours <= 24) return "medium";
+  return "low";
 }
 
 function buildAvailability(
@@ -666,6 +723,194 @@ export async function getPaginatedBookings({
 
     return buildPaginatedResult(items.map(buildBookingFromDb), total, normalizedPage, perPage);
   }, paginateItems(fallbackBookings, page, perPage));
+}
+
+export async function getBookingDetail(bookingId: string): Promise<BookingDetailData | null> {
+  return withFallback(async () => {
+    const business = await getScopedBusinessRecord();
+    if (!business?.id) {
+      const booking = fallbackBookings.find((item) => item.id === bookingId);
+      if (!booking) return null;
+
+      const relatedBookings = sortBookingsBySchedule(
+        fallbackBookings.filter((item) => item.customerId === booking.customerId && item.id !== booking.id)
+      ).reverse();
+      const customer = fallbackCustomers.find((item) => item.id === booking.customerId) ?? null;
+      const customerBookings = fallbackBookings.filter((item) => item.customerId === booking.customerId);
+
+      return {
+        booking,
+        customer,
+        relatedBookings: relatedBookings.slice(0, 4),
+        stats: {
+          totalBookings: customerBookings.length,
+          completedBookings: customerBookings.filter((item) => item.status === "completed").length,
+          pendingBookings: customerBookings.filter((item) => item.status === "pending").length,
+          totalSpent: customerBookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0),
+          latestBookingAt: customerBookings.length
+            ? getBookingDateTime(sortBookingsBySchedule(customerBookings).at(-1) as Booking).toISOString()
+            : null
+        }
+      };
+    }
+
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, businessId: business.id },
+      include: {
+        customer: true
+      }
+    });
+
+    if (!booking) {
+      return null;
+    }
+
+    const [relatedRows, customerBookingStats] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          businessId: business.id,
+          customerId: booking.customerId,
+          id: { not: booking.id }
+        },
+        orderBy: { scheduledAt: "desc" },
+        take: 4
+      }),
+      prisma.booking.findMany({
+        where: {
+          businessId: business.id,
+          customerId: booking.customerId
+        },
+        orderBy: { scheduledAt: "desc" }
+      })
+    ]);
+
+    const normalizedBookings = customerBookingStats.map(buildBookingFromDb);
+
+    return {
+      booking: buildBookingFromDb(booking),
+      customer: {
+        id: booking.customer.id,
+        businessId: booking.customer.businessId,
+        name: booking.customer.name,
+        phone: booking.customer.phone,
+        email: booking.customer.email,
+        source: booking.customer.source,
+        notes: booking.customer.notes,
+        bookingCount: normalizedBookings.length,
+        lastBookingAt: normalizedBookings[0] ? getBookingDateTime(normalizedBookings[0]).toISOString() : null
+      },
+      relatedBookings: relatedRows.map(buildBookingFromDb),
+      stats: {
+        totalBookings: normalizedBookings.length,
+        completedBookings: normalizedBookings.filter((item) => item.status === "completed").length,
+        pendingBookings: normalizedBookings.filter((item) => item.status === "pending").length,
+        totalSpent: normalizedBookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0),
+        latestBookingAt: normalizedBookings[0] ? getBookingDateTime(normalizedBookings[0]).toISOString() : null
+      }
+    };
+  }, null);
+}
+
+export async function getFollowUpBoardData({
+  q,
+  focus
+}: {
+  q?: string;
+  focus?: "active" | "closing";
+} = {}): Promise<FollowUpBoardColumn[]> {
+  const normalizedQuery = q?.trim().toLowerCase() ?? "";
+  const statuses: FollowUpStatus[] =
+    focus === "closing"
+      ? ["offer-sent", "won", "lost"]
+      : ["needs-follow-up", "contacted", "offer-sent", "won", "lost"];
+  const bookings = await getBookings();
+
+  return statuses.map((status) => {
+    const meta = getFollowUpColumnMeta(status);
+    const items = sortBookingsBySchedule(
+      bookings.filter((booking) => {
+        const matchesStatus = (booking.followUpStatus ?? "none") === status;
+        const matchesQuery =
+          !normalizedQuery ||
+          booking.customerName.toLowerCase().includes(normalizedQuery) ||
+          booking.phone.toLowerCase().includes(normalizedQuery) ||
+          booking.serviceName.toLowerCase().includes(normalizedQuery);
+
+        return matchesStatus && matchesQuery;
+      })
+    );
+
+    return {
+      id: status,
+      label: meta.label,
+      description: meta.description,
+      items
+    };
+  });
+}
+
+export async function getReminderCenterData({
+  q,
+  priority,
+  type
+}: {
+  q?: string;
+  priority?: ReminderItem["priority"] | "";
+  type?: ReminderItem["type"] | "";
+} = {}): Promise<ReminderItem[]> {
+  const bookings = await getBookings();
+  const now = new Date();
+  const nextThreeDays = addMinutes(now, 72 * 60);
+  const normalizedQuery = q?.trim().toLowerCase() ?? "";
+
+  const items = bookings.flatMap<ReminderItem>((booking) => {
+    const appointmentAt = getBookingDateTime(booking);
+    const appointmentItems =
+      appointmentAt >= now && appointmentAt <= nextThreeDays
+        ? [
+            {
+              booking,
+              type: "appointment" as const,
+              dueAt: appointmentAt.toISOString(),
+              title: booking.status === "pending" ? "Konfirmasi booking mendekat" : "Booking akan berlangsung",
+              detail:
+                booking.status === "pending"
+                  ? "Booking ini dekat jadwalnya dan masih perlu kepastian."
+                  : "Slot sudah dekat, cocok untuk reminder operasional atau customer.",
+              priority: getReminderPriority(booking, appointmentAt, "appointment")
+            }
+          ]
+        : [];
+    const followUpItems =
+      booking.followUpNextActionAt
+        ? [
+            {
+              booking,
+              type: "follow-up" as const,
+              dueAt: booking.followUpNextActionAt,
+              title: "Next action follow up",
+              detail: booking.followUpNote || "Sudah ada next action yang dijadwalkan untuk booking ini.",
+              priority: getReminderPriority(booking, new Date(booking.followUpNextActionAt), "follow-up")
+            }
+          ]
+        : [];
+
+    return [...appointmentItems, ...followUpItems];
+  });
+
+  return items
+    .filter((item) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        item.booking.customerName.toLowerCase().includes(normalizedQuery) ||
+        item.booking.phone.toLowerCase().includes(normalizedQuery) ||
+        item.booking.serviceName.toLowerCase().includes(normalizedQuery) ||
+        item.title.toLowerCase().includes(normalizedQuery);
+      const matchesPriority = !priority || item.priority === priority;
+      const matchesType = !type || item.type === type;
+      return matchesQuery && matchesPriority && matchesType;
+    })
+    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
 }
 
 export async function getPaginatedCustomers({

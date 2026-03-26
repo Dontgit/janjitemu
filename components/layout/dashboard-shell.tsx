@@ -6,6 +6,8 @@ import {
   Sparkles,
   Users,
   CalendarDays,
+  KanbanSquare,
+  BellRing,
   PanelLeft,
   ArrowUpRight
 } from "lucide-react";
@@ -16,6 +18,8 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: ChartColumn },
   { href: "/bookings", label: "Bookings", icon: CalendarRange },
+  { href: "/follow-ups", label: "Follow-up", icon: KanbanSquare },
+  { href: "/reminders", label: "Reminder", icon: BellRing },
   { href: "/services", label: "Layanan", icon: Sparkles },
   { href: "/customers", label: "Customer", icon: Users },
   { href: "/schedule", label: "Jadwal", icon: CalendarDays },

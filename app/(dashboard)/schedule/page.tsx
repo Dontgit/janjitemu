@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { CalendarDays, Clock3, Layers3, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatusBadge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -55,6 +57,12 @@ export default async function SchedulePage() {
                 eyebrow="Schedule"
                 title="Kalender operasional mingguan"
                 description="Ringkasan booking per tanggal dan jam operasional agar owner cepat melihat slot padat, hari kosong, dan kebutuhan reschedule dengan tampilan yang terasa setara premium di seluruh dashboard."
+                actions={
+                  <>
+                    <Link href="/bookings" className={buttonVariants("secondary")}>Kelola bookings</Link>
+                    <Link href="/reminders" className={buttonVariants("secondary")}>Reminder center</Link>
+                  </>
+                }
               />
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 <div className="soft-stat rounded-[24px] p-4">
@@ -167,7 +175,12 @@ export default async function SchedulePage() {
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-[var(--muted)]">{booking.phone}</p>
+                        <div className="text-sm sm:text-right">
+                          <p className="text-[var(--muted)]">{booking.phone}</p>
+                          <Link href={`/bookings/${booking.id}`} className="mt-2 inline-flex font-semibold text-[var(--primary)]">
+                            Detail booking
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}

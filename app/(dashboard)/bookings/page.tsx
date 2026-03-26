@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarRange, Filter, PencilLine, Plus, Trash2 } from "lucide-react";
 import { createBooking, deleteBooking, updateBookingStatus } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -12,6 +13,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { buttonVariants } from "@/components/ui/button";
 import { getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
 import { formatDateTimeLabel } from "@/lib/utils";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
@@ -90,6 +92,12 @@ export default async function BookingsPage({
             eyebrow="Booking Management"
             title="Kelola semua booking dari satu layar"
             description="Tambah booking manual, ubah status, reschedule, atau hapus booking yang salah input. Ini sudah mendekati flow owner sehari-hari untuk MVP."
+            actions={
+              <>
+                <Link href="/follow-ups" className={buttonVariants("secondary")}>Follow-up board</Link>
+                <Link href="/reminders" className={buttonVariants("secondary")}>Reminder center</Link>
+              </>
+            }
           />
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -306,6 +314,9 @@ export default async function BookingsPage({
                       {booking.followUpNote ? <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">{booking.followUpNote}</p> : null}
                       <p className="mt-1 text-sm text-[var(--muted)]">Next action: {formatDateTimeLabel(booking.followUpNextActionAt)}</p>
                     </div>
+                    <Link href={`/bookings/${booking.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)]">
+                      Lihat detail booking
+                    </Link>
                   </div>
 
                   <div className="grid gap-3 xl:min-w-[360px] xl:max-w-[380px] xl:flex-1">

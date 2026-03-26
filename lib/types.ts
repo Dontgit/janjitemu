@@ -61,6 +61,8 @@ export type Booking = {
   followUpStatus?: FollowUpStatus;
   followUpNote?: string | null;
   followUpNextActionAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 export type BusinessHour = {
@@ -134,6 +136,35 @@ export type BookingSummary = {
   noShow: number;
   upcoming: number;
   today: number;
+};
+
+export type BookingDetailData = {
+  booking: Booking;
+  customer?: Customer | null;
+  relatedBookings: Booking[];
+  stats: {
+    totalBookings: number;
+    completedBookings: number;
+    pendingBookings: number;
+    totalSpent: number;
+    latestBookingAt: string | null;
+  };
+};
+
+export type FollowUpBoardColumn = {
+  id: FollowUpStatus;
+  label: string;
+  description: string;
+  items: Booking[];
+};
+
+export type ReminderItem = {
+  booking: Booking;
+  type: "follow-up" | "appointment";
+  priority: "high" | "medium" | "low";
+  dueAt: string;
+  title: string;
+  detail: string;
 };
 
 export type PublicBookingFormValues = {

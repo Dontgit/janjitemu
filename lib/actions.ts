@@ -660,6 +660,8 @@ function refreshDashboardRoutes(slug?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/services");
   revalidatePath("/bookings");
+  revalidatePath("/follow-ups");
+  revalidatePath("/reminders");
   revalidatePath("/customers");
   revalidatePath("/schedule");
   revalidatePath("/settings");
@@ -1414,6 +1416,42 @@ export async function updateBookingStatus(formData: FormData) {
 
   refreshDashboardRoutes(booking.business.slug);
   redirectWithSuccess(redirectTarget, "Booking berhasil diperbarui.");
+}
+
+export async function updateBookingFollowUp(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, "/follow-ups");
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+  const bookingId = getValue(formData, "bookingId");
+  const followUpStatus = parseFollowUpStatus(getValue(formData, "followUpStatus"));
+  const followUpNote = getNormalizedOptionalText(formData, "followUpNote", MAX_NOTES_LENGTH);
+  const followUpNextActionAt = normalizeFollowUpDateTime(getValue(formData, "followUpNextActionAt"));
+
+  if (!bookingId) {
+    redirectWithError(redirectTarget, "Booking ID tidak ditemukan.");
+  }
+
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId, businessId: business.id },
+    include: { business: true }
+  });
+
+  if (!booking) {
+    redirectWithError(redirectTarget, "Booking tidak ditemukan.");
+  }
+
+  await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      followUpStatus,
+      followUpNote,
+      followUpNextActionAt
+    }
+  });
+
+  refreshDashboardRoutes(booking.business.slug);
+  revalidatePath(`/bookings/${booking.id}`);
+  redirectWithSuccess(redirectTarget, "Follow up booking berhasil diperbarui.");
 }
 
 export async function deleteBooking(formData: FormData) {

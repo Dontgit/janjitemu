@@ -82,6 +82,9 @@ export default async function DashboardPage() {
                     <Link href="/bookings" className={buttonVariants("primary")}>
                       Kelola booking
                     </Link>
+                    <Link href="/follow-ups" className={buttonVariants("secondary")}>
+                      Follow-up board
+                    </Link>
                     <Link href={`/book/${business.slug ?? "temujanji-studio"}`} className={buttonVariants("secondary")}>
                       Lihat booking page
                     </Link>
@@ -206,7 +209,7 @@ export default async function DashboardPage() {
                       </div>
                       <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
                         <p className="text-sm text-[var(--muted)]">{booking.phone}</p>
-                        <Link href="/bookings" className="mt-0 inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary)] sm:mt-3">
+                        <Link href={`/bookings/${booking.id}`} className="mt-0 inline-flex items-center gap-1 text-sm font-semibold text-[var(--primary)] sm:mt-3">
                           Detail
                           <ArrowRight className="h-4 w-4" />
                         </Link>
