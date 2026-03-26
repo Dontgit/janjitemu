@@ -44,23 +44,29 @@ export default async function DashboardPage() {
         steps={[
           {
             title: "Mulai dari ringkasan utama",
-            description: "Bagian overview menyorot metrik penting, booking terbaru, dan agenda hari ini supaya Anda cepat tahu apa yang perlu ditindak tanpa pindah halaman.",
-            tip: "Kalau baru buka workspace, cek panel agenda hari ini dan tombol Kelola booking lebih dulu."
+            description: "Panel overview adalah titik start untuk membaca kondisi bisnis: metrik utama di kiri dan agenda hari ini di kanan, jadi owner langsung tahu apa yang perlu diprioritaskan.",
+            tip: "Kalau baru login, cek agenda hari ini lalu lanjut ke tombol Kelola booking.",
+            targetSelector: '[data-tutorial="dashboard-overview"]',
+            targetLabel: "Overview & agenda"
           },
           {
             title: "Gunakan quick actions & health panel",
-            description: "Kartu quick actions membantu membaca kondisi bisnis: booking pending, jadwal padat, dan customer aktif. Ini cocok untuk scanning cepat tiap pagi atau sore.",
-            tip: "Panel highlights cocok untuk melihat sinyal performa ringan sebelum follow up customer."
+            description: "Bagian ini dipakai untuk scanning cepat: sinyal booking pending, jadwal padat, customer aktif, dan highlight performa ringan tanpa harus buka halaman detail dulu.",
+            tip: "Ideal untuk review pagi atau sebelum follow up sore.",
+            targetSelector: '[data-tutorial="dashboard-health"]',
+            targetLabel: "Quick actions"
           },
           {
             title: "Lompat ke eksekusi yang relevan",
-            description: "Dari halaman ini Anda bisa langsung masuk ke daftar booking, membuka booking page publik, atau mengecek customer terbaru tanpa kehilangan konteks.",
-            tip: "Kalau ingin link publik siap dibagikan, lanjutkan juga ke halaman Pengaturan."
+            description: "Daftar booking terbaru membantu Anda pindah dari mode monitoring ke aksi: buka detail booking, cek customer aktif, atau lanjut ke halaman booking untuk update status.",
+            tip: "Gunakan ini sebagai shortcut ke pekerjaan yang paling dekat jadwalnya.",
+            targetSelector: '[data-tutorial="dashboard-recent-bookings"]',
+            targetLabel: "Booking terbaru"
           }
         ]}
       />
       <div className="space-y-6 xl:space-y-7">
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
+        <Card data-tutorial="dashboard-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-100 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)] shadow-[0_8px_20px_rgba(20,49,44,0.05)]">
@@ -133,7 +139,7 @@ export default async function DashboardPage() {
         </Card>
 
         <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-          <Card className="p-6">
+          <Card data-tutorial="dashboard-health" className="p-6">
             <div className="flex items-center justify-between gap-4">
               <p className="text-lg font-semibold">Quick actions & business health</p>
               <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
@@ -163,7 +169,7 @@ export default async function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card data-tutorial="dashboard-recent-bookings" className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-lg font-semibold">Booking terbaru</p>

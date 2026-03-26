@@ -214,7 +214,7 @@ export function PublicBookingFlow({
           <input type="hidden" name="time" value={selectedTime} />
 
           {step === 1 ? (
-            <section className="space-y-8">
+            <section data-tutorial="public-booking-step-1" className="space-y-8">
               <section className="space-y-4">
                 <div>
                   <h2 className="text-lg font-semibold">1. Pilih layanan utama</h2>
@@ -400,7 +400,7 @@ export function PublicBookingFlow({
           ) : null}
 
           {step === 2 ? (
-            <section className="space-y-4">
+            <section data-tutorial="public-booking-step-2" className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold">2. Isi data customer</h2>
                 <p className="text-sm text-[var(--muted)]">Cukup data inti untuk booking pertama. Detail lanjutan bisa ditambah owner dari dashboard.</p>
@@ -546,7 +546,7 @@ export function PublicBookingFlow({
       </Card>
 
       <div className="space-y-6 xl:sticky xl:top-24">
-        <Card className="overflow-hidden p-0">
+        <Card data-tutorial="public-booking-summary" className="overflow-hidden p-0">
           <div className="border-b border-teal-100 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.18),transparent_45%),linear-gradient(135deg,#f0fdfa,#ffffff_52%,#ecfeff)] px-6 py-5">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">Ringkasan booking</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">

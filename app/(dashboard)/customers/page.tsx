@@ -47,25 +47,31 @@ export default async function CustomersPage({
         steps={[
           {
             title: "Gunakan halaman ini sebagai CRM ringan",
-            description: "Daftar customer membantu Anda melihat lead baru, pelanggan yang sudah pernah booking, dan repeat customer tanpa perlu alat CRM terpisah.",
-            tip: "Kalau sedang follow up promo, mulai dari customer yang booking count-nya lebih dari satu."
+            description: "Panel snapshot membantu membaca total lead, customer yang sudah booking, dan repeat customer. Ini berguna untuk melihat kualitas basis customer secara cepat.",
+            tip: "Kalau lagi cari peluang promo, mulai dari repeat customer.",
+            targetSelector: '[data-tutorial="customers-overview"]',
+            targetLabel: "Snapshot customer"
           },
           {
             title: "Cari berdasarkan sumber atau kontak",
-            description: "Form pencarian memudahkan penyaringan berdasarkan nama, WhatsApp, email, atau sumber lead supaya segmentasi follow up lebih cepat.",
-            tip: "Isi kolom source secara konsisten agar performa channel seperti Instagram atau referral lebih mudah dibaca."
+            description: "Area filter dipakai untuk menyaring customer berdasarkan nama, kontak, atau source lead supaya segmentasi follow up lebih cepat.",
+            tip: "Isi source secara konsisten agar channel acquisition lebih mudah dibaca.",
+            targetSelector: '[data-tutorial="customers-filter"]',
+            targetLabel: "Cari customer"
           },
           {
             title: "Simpan catatan yang berguna untuk repeat order",
-            description: "Setiap kartu customer bisa diperbarui dengan data kontak, sumber, histori booking terakhir, dan catatan internal supaya layanan berikutnya terasa lebih personal.",
-            tip: "Hindari menghapus customer yang sudah punya booking agar histori tetap utuh."
+            description: "Kartu customer dipakai untuk merapikan profil, mencatat histori singkat, dan menyimpan konteks internal supaya layanan berikutnya terasa lebih personal.",
+            tip: "Jangan hapus customer yang sudah punya histori booking kalau masih ingin menjaga jejak relasi.",
+            targetSelector: '[data-tutorial="customers-list"]',
+            targetLabel: "Daftar customer"
           }
         ]}
       />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
 
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
+        <Card data-tutorial="customers-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
             <div>
               <span className="section-label">
@@ -98,7 +104,7 @@ export default async function CustomersPage({
         </Card>
 
         <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-          <Card className="p-6">
+          <Card data-tutorial="customers-filter" className="p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <Search className="h-5 w-5" />
@@ -169,6 +175,7 @@ export default async function CustomersPage({
           />
         ) : null}
 
+        <div data-tutorial="customers-list">
         {customers.items.length === 0 ? (
           <EmptyState
             title="Belum ada customer"
@@ -232,6 +239,7 @@ export default async function CustomersPage({
             ))}
           </div>
         )}
+        </div>
       </div>
     </DashboardShell>
   );

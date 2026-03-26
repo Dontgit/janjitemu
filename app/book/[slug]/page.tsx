@@ -30,18 +30,24 @@ export default async function PublicBookingPage({
         steps={[
           {
             title: "Pilih layanan dan slot lebih dulu",
-            description: "Flow booking dibuat bertahap agar customer fokus: pilih layanan utama, add-on opsional, tanggal, lalu jam yang masih tersedia.",
-            tip: "Kalau slot kosong, customer bisa mencoba tanggal lain atau menghubungi bisnis langsung."
+            description: "Bagian pertama dipakai customer untuk memilih layanan utama, add-on opsional, tanggal, lalu jam yang masih tersedia. Ini adalah inti proses booking.",
+            tip: "Kalau slot kosong, customer bisa ganti tanggal atau kontak bisnis.",
+            targetSelector: '[data-tutorial="public-booking-step-1"]',
+            targetLabel: "Pilih layanan & slot"
           },
           {
             title: "Isi data inti secukupnya",
-            description: "Step data customer hanya meminta informasi penting seperti nama dan WhatsApp agar proses tetap cepat dan tidak terasa berat.",
-            tip: "Catatan tambahan bisa dipakai untuk kebutuhan khusus atau preferensi tertentu."
+            description: "Step ini hanya meminta data yang benar-benar perlu untuk follow up: nama, WhatsApp, dan catatan penting bila ada kebutuhan khusus.",
+            tip: "Customer tidak perlu isi terlalu banyak agar conversion tetap ringan.",
+            targetSelector: '[data-tutorial="public-booking-step-2"]',
+            targetLabel: "Data customer"
           },
           {
             title: "Review sebelum kirim",
-            description: "Ringkasan di sisi kanan membantu customer mengecek layanan, add-on, jadwal, estimasi biaya, dan estimasi selesai sebelum booking dikonfirmasi.",
-            tip: "Setelah selesai, panduan tidak akan muncul lagi kecuali dibuka ulang atau direset."
+            description: "Ringkasan membantu customer memastikan layanan, jadwal, estimasi biaya, dan detail kontak sudah benar sebelum booking dikirim.",
+            tip: "Owner juga bisa pakai panel ini untuk QA tampilan halaman publik.",
+            targetSelector: '[data-tutorial="public-booking-summary"]',
+            targetLabel: "Ringkasan booking"
           }
         ]}
       />

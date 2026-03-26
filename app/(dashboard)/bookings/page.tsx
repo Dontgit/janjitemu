@@ -62,18 +62,24 @@ export default async function BookingsPage({
         steps={[
           {
             title: "Filter dulu kalau datanya mulai ramai",
-            description: "Bagian filter membantu mencari booking berdasarkan customer, nomor WhatsApp, layanan, status booking, dan status follow up dalam satu layar.",
-            tip: "Gunakan keyword + status untuk memisahkan booking pending yang perlu ditindak hari ini."
+            description: "Bagian ini dipakai untuk menyaring booking berdasarkan customer, WhatsApp, layanan, status booking, dan status follow up dalam satu layar.",
+            tip: "Kombinasi keyword + status cocok untuk mencari booking pending yang harus ditindak hari ini.",
+            targetSelector: '[data-tutorial="bookings-filter"]',
+            targetLabel: "Filter booking"
           },
           {
             title: "Tambah booking manual saat perlu",
-            description: "Form tambah booking cocok untuk walk-in, chat WhatsApp, atau input admin. Anda bisa pilih layanan utama, add-on, jadwal, dan catatan sekaligus.",
-            tip: "Kalau customer booking lewat link publik, data biasanya akan masuk otomatis tanpa form ini."
+            description: "Form ini berguna untuk walk-in, order via chat, atau input admin. Semua detail dasar booking bisa diisi tanpa pindah halaman.",
+            tip: "Kalau booking datang dari link publik, area ini biasanya dipakai hanya untuk kasus manual.",
+            targetSelector: '[data-tutorial="bookings-create"]',
+            targetLabel: "Tambah booking"
           },
           {
             title: "Kelola status dan follow up dari kartu booking",
-            description: "Setiap booking punya area update untuk ubah status, reschedule tanggal atau jam, serta mencatat next action follow up supaya proses after-sales tetap rapi.",
-            tip: "Simpan follow up note dan next action untuk memudahkan repeat booking atau penawaran berikutnya."
+            description: "Area daftar booking dipakai untuk membaca status terbaru, jadwal terdekat, serta action lanjutan seperti update status atau follow up note.",
+            tip: "Prioritaskan kartu dengan jadwal paling dekat atau status pending.",
+            targetSelector: '[data-tutorial="bookings-list"]',
+            targetLabel: "Daftar booking"
           }
         ]}
       />
@@ -100,7 +106,7 @@ export default async function BookingsPage({
           </div>
         </Card>
 
-        <Card className="p-6 xl:p-7">
+        <Card data-tutorial="bookings-filter" className="p-6 xl:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
@@ -160,7 +166,7 @@ export default async function BookingsPage({
           </p>
         </Card>
 
-        <Card className="p-6 xl:p-7">
+        <Card data-tutorial="bookings-create" className="p-6 xl:p-7">
           <div className="flex items-center gap-3">
             <span className="icon-chip">
               <Plus className="h-5 w-5" />
@@ -241,6 +247,7 @@ export default async function BookingsPage({
           />
         ) : null}
 
+        <div data-tutorial="bookings-list">
         {paginatedBookings.items.length === 0 ? (
           <EmptyState
             title="Belum ada booking"
@@ -374,6 +381,7 @@ export default async function BookingsPage({
             ))}
           </div>
         )}
+        </div>
       </div>
     </DashboardShell>
   );

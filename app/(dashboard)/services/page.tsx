@@ -49,25 +49,31 @@ export default async function ServicesPage({
         steps={[
           {
             title: "Rawat katalog layanan di satu tempat",
-            description: "Halaman ini dipakai untuk mengatur layanan utama dan add-on, termasuk harga, durasi, deskripsi, dan status aktif untuk booking publik.",
-            tip: "Pastikan layanan yang dijual ke publik tetap aktif agar muncul di halaman booking customer."
+            description: "Bagian overview membantu membaca kesehatan katalog: total layanan, yang sedang aktif, dan yang ditandai populer untuk booking publik.",
+            tip: "Layanan yang dijual ke publik harus tetap aktif.",
+            targetSelector: '[data-tutorial="services-overview"]',
+            targetLabel: "Snapshot katalog"
           },
           {
             title: "Tambah layanan baru dengan struktur lengkap",
-            description: "Form tambah layanan membantu menyiapkan paket baru sejak awal: nama, harga, durasi, deskripsi, label populer, sampai penanda add-on.",
-            tip: "Gunakan label populer untuk mendorong layanan unggulan tampil lebih meyakinkan."
+            description: "Form ini dipakai untuk menyiapkan paket baru sejak awal, termasuk harga, durasi, deskripsi, label populer, dan aturan add-on.",
+            tip: "Gunakan label populer untuk layanan unggulan yang ingin didorong.",
+            targetSelector: '[data-tutorial="services-create"]',
+            targetLabel: "Tambah layanan"
           },
           {
             title: "Edit tiap layanan tanpa pindah halaman",
-            description: "Setiap kartu layanan bisa langsung diedit untuk mengubah detail, menonaktifkan layanan, atau menandai add-on tanpa membuka modal lain.",
-            tip: "Kalau ingin tes hasilnya, lanjutkan ke preview booking page dari halaman Pengaturan."
+            description: "Daftar layanan membantu update detail, menonaktifkan layanan, atau mengatur add-on langsung dari kartu yang sudah ada.",
+            tip: "Sesudah edit, preview halaman publik untuk cek hasil akhir.",
+            targetSelector: '[data-tutorial="services-list"]',
+            targetLabel: "Daftar layanan"
           }
         ]}
       />
       <div className="space-y-6 xl:space-y-7">
         <FeedbackBanner feedback={feedback} />
 
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
+        <Card data-tutorial="services-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
             <div>
               <span className="section-label">
@@ -135,7 +141,7 @@ export default async function ServicesPage({
             </div>
           </Card>
 
-          <Card className="p-6 sm:p-7">
+          <Card data-tutorial="services-create" className="p-6 sm:p-7">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <BriefcaseBusiness className="h-5 w-5" />
@@ -205,6 +211,7 @@ export default async function ServicesPage({
           />
         ) : null}
 
+        <div data-tutorial="services-list">
         {services.items.length === 0 ? (
           <EmptyState
             title="Belum ada layanan"
@@ -337,6 +344,7 @@ export default async function ServicesPage({
             ))}
           </div>
         )}
+        </div>
       </div>
     </DashboardShell>
   );

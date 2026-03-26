@@ -21,23 +21,29 @@ export default async function SchedulePage() {
         steps={[
           {
             title: "Baca planner mingguan dari atas ke bawah",
-            description: "Panel atas merangkum tanggal terisi, total booking, dan snapshot jam operasional agar Anda cepat melihat beban minggu berjalan.",
-            tip: "Kalau jumlah hari terjadwal mulai padat, cek tanggal yang butuh buffer atau reschedule."
+            description: "Panel atas adalah ringkasan minggu berjalan: jumlah hari terisi, total booking, dan snapshot ritme operasional supaya beban kerja cepat terbaca.",
+            tip: "Kalau hari terjadwal mulai padat, cek detail tanggal yang perlu buffer.",
+            targetSelector: '[data-tutorial="schedule-overview"]',
+            targetLabel: "Planner overview"
           },
           {
             title: "Cocokkan jam operasional dengan booking aktif",
-            description: "Kolom jam operasional membantu memastikan hari buka-tutup sudah sinkron dengan slot publik dan ritme kerja internal.",
-            tip: "Perubahan jam operasional dilakukan dari halaman Pengaturan, lalu cek kembali hasilnya di sini."
+            description: "Kolom ini dipakai untuk memastikan jam buka-tutup sudah sinkron dengan slot publik yang seharusnya tersedia.",
+            tip: "Kalau ada mismatch, perbaiki dari Pengaturan lalu cek lagi di sini.",
+            targetSelector: '[data-tutorial="schedule-hours"]',
+            targetLabel: "Jam operasional"
           },
           {
             title: "Lihat detail per tanggal untuk spotting konflik",
-            description: "Setiap kartu tanggal menampilkan customer, status, jam, dan layanan. Ini cocok untuk membaca hari yang penuh atau memantau booking yang belum confirmed.",
-            tip: "Kalau menemukan masalah jadwal, lanjut ke halaman Bookings untuk update status atau reschedule."
+            description: "Kartu tanggal menampilkan customer, status, jam, dan layanan. Area ini cocok untuk mencari hari penuh atau booking yang butuh perhatian cepat.",
+            tip: "Kalau perlu aksi, lanjut ke halaman Bookings untuk update detailnya.",
+            targetSelector: '[data-tutorial="schedule-days"]',
+            targetLabel: "Detail per tanggal"
           }
         ]}
       />
       <div className="space-y-6 xl:space-y-7">
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
+        <Card data-tutorial="schedule-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div>
               <span className="section-label">
@@ -91,7 +97,7 @@ export default async function SchedulePage() {
         </Card>
 
         <div className="grid gap-6 2xl:grid-cols-[340px_minmax(0,1fr)]">
-          <Card className="p-6">
+          <Card data-tutorial="schedule-hours" className="p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <Clock3 className="h-5 w-5" />
@@ -118,7 +124,7 @@ export default async function SchedulePage() {
             </div>
           </Card>
 
-          <div className="space-y-4">
+          <div data-tutorial="schedule-days" className="space-y-4">
             {dates.length === 0 ? (
               <EmptyState
                 title="Belum ada booking"

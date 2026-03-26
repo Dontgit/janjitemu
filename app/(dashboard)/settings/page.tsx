@@ -34,18 +34,24 @@ export default async function SettingsPage({
         steps={[
           {
             title: "Selesaikan setup profil bisnis lebih dulu",
-            description: "Di sini Anda mengatur identitas bisnis, slug booking publik, kontak, interval slot, dan buffer antar booking yang memengaruhi pengalaman customer.",
-            tip: "Perubahan slug akan mengubah alamat booking page publik, jadi cek lagi sebelum membagikannya."
+            description: "Bagian ini mengatur identitas bisnis, slug booking publik, kontak, interval slot, dan buffer. Semua ini langsung memengaruhi pengalaman customer di halaman booking.",
+            tip: "Perubahan slug akan mengubah link publik, jadi cek sebelum dibagikan.",
+            targetSelector: '[data-tutorial="settings-profile"]',
+            targetLabel: "Profil bisnis"
           },
           {
             title: "Atur jam operasional secara teliti",
-            description: "Setiap hari bisa diaktifkan atau diliburkan, lalu diisi jam buka-tutup agar availability publik mengikuti ritme bisnis yang sebenarnya.",
-            tip: "Kalau slot terasa terlalu rapat, naikkan interval atau tambahkan buffer antar booking."
+            description: "Di sini Anda menentukan hari aktif, jam buka-tutup, dan ritme availability publik supaya slot yang tampil ke customer tetap realistis.",
+            tip: "Kalau jadwal terasa terlalu rapat, naikkan interval atau buffer.",
+            targetSelector: '[data-tutorial="settings-hours"]',
+            targetLabel: "Jam operasional"
           },
           {
             title: "Gunakan halaman ini untuk go-live",
-            description: "Checklist MVP, preview booking page, dan tombol reset panduan ada di sini supaya onboarding workspace bisa diulang kapan saja tanpa menghapus data lain.",
-            tip: "Setelah update pengaturan penting, buka preview booking page untuk memastikan tampilannya sudah sesuai."
+            description: "Panel samping dan action bar dipakai untuk final check sebelum go-live: preview halaman publik, cek checklist, lalu reset panduan kalau onboarding ingin diulang.",
+            tip: "Sesudah update penting, buka preview booking page untuk QA cepat.",
+            targetSelector: '[data-tutorial="settings-go-live"]',
+            targetLabel: "Go-live actions"
           }
         ]}
       />
@@ -91,7 +97,7 @@ export default async function SettingsPage({
             <form action={saveBusinessProfile} className="space-y-8">
               <input type="hidden" name="redirectTo" value="/settings" />
 
-              <section className="space-y-4">
+              <section data-tutorial="settings-profile" className="space-y-4">
                 <div className="flex items-start gap-4">
                   <span className="icon-chip">
                     <Sparkles className="h-5 w-5" />
@@ -125,7 +131,7 @@ export default async function SettingsPage({
                 </div>
               </section>
 
-              <section className="space-y-4">
+              <section data-tutorial="settings-hours" className="space-y-4">
                 <div className="flex items-start gap-4">
                   <span className="icon-chip">
                     <Globe className="h-5 w-5" />
@@ -157,7 +163,7 @@ export default async function SettingsPage({
                 </div>
               </section>
 
-              <div className="flex flex-wrap gap-3">
+              <div data-tutorial="settings-go-live" className="flex flex-wrap gap-3">
                 <SubmitButton>Simpan perubahan</SubmitButton>
                 <Link href={`/book/${businessProfile.slug ?? "temujanji-studio"}`} className={buttonVariants("secondary")}>
                   Preview booking page
