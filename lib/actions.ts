@@ -15,6 +15,7 @@ import {
   verifyPassword
 } from "@/lib/auth";
 import { normalizeRedirectTarget, withFeedback, withPublicBookingValues } from "@/lib/feedback";
+import { buildBookingUrl } from "@/lib/app-config";
 import { addMinutes, combineDateTime, hasDatabaseUrl } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 
@@ -339,7 +340,7 @@ async function ensureBusinessForOwner(userId: string) {
       city: defaultBusiness.city,
       description: defaultBusiness.description,
       reminderChannel: defaultBusiness.reminderChannel,
-      bookingLink: `temujanji.app/book/${ownerSlug}`,
+      bookingLink: buildBookingUrl(ownerSlug),
       onboardingCompleted: false
     }
   });
@@ -641,7 +642,7 @@ export async function registerOwner(formData: FormData) {
           city: defaultBusiness.city,
           description: defaultBusiness.description,
           reminderChannel: defaultBusiness.reminderChannel,
-          bookingLink: `temujanji.app/book/${requestedSlug}`,
+          bookingLink: buildBookingUrl(requestedSlug),
           onboardingCompleted: false
         }
       });
@@ -886,7 +887,7 @@ export async function saveBusinessProfile(formData: FormData) {
       category,
       city,
       description,
-      bookingLink: `temujanji.app/book/${slug}`,
+      bookingLink: buildBookingUrl(slug),
       reminderChannel,
       phone,
       email,

@@ -68,7 +68,7 @@ export default async function OnboardingPage({
               />
             </div>
             <div className="sm:col-span-2 rounded-[22px] bg-white p-4 text-sm text-[var(--muted)]">
-              Preview link booking: <span className="font-semibold text-[var(--foreground)]">temujanji.app/book/{business.slug ?? "temujanji-studio"}</span>
+              Preview link booking: <span className="font-semibold text-[var(--foreground)]">{business.bookingLink ?? `https://janjitemu.gobisnis.cloud/book/${business.slug ?? "temujanji-studio"}`}</span>
             </div>
             <div className="sm:col-span-2">
               <Textarea

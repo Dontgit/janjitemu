@@ -1,3 +1,4 @@
+import { buildBookingUrl } from "@/lib/app-config";
 import {
   AvailabilityDay,
   Booking,
@@ -18,9 +19,9 @@ export const businessProfile: BusinessProfile = {
   city: "Bandung",
   description:
     "Studio appointment-based untuk treatment singkat, konsultasi, dan layanan premium dengan booking yang rapi.",
-  bookingLink: "temujanji.app/book/temujanji-studio",
+  bookingLink: buildBookingUrl("temujanji-studio"),
   phone: "0812-0000-1234",
-  email: "halo@temujanji.app",
+  email: "halo@janjitemu.gobisnis.cloud",
   reminderChannel: "Email + reminder dashboard"
 };
 

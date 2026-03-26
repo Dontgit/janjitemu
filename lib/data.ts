@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { getOptionalSessionUser } from "@/lib/auth";
+import { buildBookingUrl } from "@/lib/app-config";
 import { prisma } from "@/lib/prisma";
 import {
   availableDates,
@@ -334,7 +335,7 @@ export async function getOwnerBusiness(): Promise<BusinessProfile> {
       category: business.category,
       city: business.city,
       description: business.description,
-      bookingLink: business.bookingLink ?? `temujanji.app/book/${business.slug}`,
+      bookingLink: business.bookingLink ?? buildBookingUrl(business.slug),
       phone: business.phone ?? "",
       email: business.email ?? "",
       reminderChannel: business.reminderChannel ?? "Email + reminder dashboard",
@@ -367,7 +368,7 @@ export async function getPublicBusiness(slug: string): Promise<BusinessProfile> 
       category: business.category,
       city: business.city,
       description: business.description,
-      bookingLink: business.bookingLink ?? `temujanji.app/book/${business.slug}`,
+      bookingLink: business.bookingLink ?? buildBookingUrl(business.slug),
       phone: business.phone ?? "",
       email: business.email ?? "",
       reminderChannel: business.reminderChannel ?? "Email + reminder dashboard",

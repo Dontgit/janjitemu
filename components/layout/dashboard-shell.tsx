@@ -5,7 +5,9 @@ import {
   Settings,
   Sparkles,
   Users,
-  CalendarDays
+  CalendarDays,
+  PanelLeft,
+  ArrowUpRight
 } from "lucide-react";
 import { logoutOwner } from "@/lib/actions";
 import { getOptionalSessionUser } from "@/lib/auth";
@@ -23,7 +25,7 @@ const links = [
 export async function DashboardShell({
   children,
   activePath,
-  bookingLink = "temujanji.app/book/temujanji-studio"
+  bookingLink = "https://janjitemu.gobisnis.cloud/book/temujanji-studio"
 }: {
   children: React.ReactNode;
   activePath: string;
@@ -33,59 +35,77 @@ export async function DashboardShell({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <div className="page-shell grid gap-6 py-6 lg:grid-cols-[260px_1fr]">
-        <aside className="glass-card rounded-[32px] border border-[var(--border)] p-5">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary)] text-lg font-bold text-white">
+      <div className="page-shell-wide grid gap-5 py-4 sm:gap-6 sm:py-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
+        <aside className="glass-card rounded-[30px] border border-[var(--border)] p-4 sm:p-5 xl:sticky xl:top-24 xl:min-h-[calc(100vh-7rem)] xl:self-start xl:p-6">
+          <div className="mb-5 flex items-center gap-3 sm:mb-6 xl:mb-8">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] text-lg font-bold text-white shadow-[0_14px_32px_rgba(15,118,110,0.25)]">
               T
             </div>
-            <div>
-              <p className="font-semibold">Temujanji</p>
-              <p className="text-sm text-[var(--muted)]">
+            <div className="min-w-0">
+              <p className="font-semibold sm:text-lg">Temujanji</p>
+              <p className="truncate text-sm text-[var(--muted)]">
                 {sessionUser?.name ? `Owner workspace • ${sessionUser.name}` : "Owner workspace"}
               </p>
             </div>
           </div>
 
-          <nav className="space-y-2">
+          <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:hidden">
+            <PanelLeft className="h-4 w-4" />
+            Navigasi cepat
+          </div>
+
+          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:grid xl:gap-2 xl:overflow-visible xl:px-0 xl:pb-0">
             {links.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
+                  "group flex min-w-fit items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition xl:min-w-0",
                   activePath === href
                     ? "bg-[var(--primary)] text-white shadow-[0_10px_25px_rgba(15,118,110,0.2)]"
-                    : "text-[var(--muted)] hover:bg-white"
+                    : "bg-white/70 text-[var(--muted)] hover:bg-white hover:text-[var(--foreground)]"
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {label}
+                <span className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl border transition",
+                  activePath === href
+                    ? "border-white/15 bg-white/10 text-white"
+                    : "border-[var(--border)] bg-white text-[var(--primary)] group-hover:border-teal-100 group-hover:bg-teal-50"
+                )}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span>{label}</span>
               </Link>
             ))}
           </nav>
 
-          <div className="mt-8 rounded-[24px] bg-[#14312c] p-5 text-white">
-            <p className="text-sm text-white/70">Link publik</p>
-            <p className="mt-2 text-sm font-medium">{bookingLink}</p>
+          <div className="mt-5 rounded-[26px] bg-[#14312c] p-5 text-white shadow-[0_18px_40px_rgba(20,49,44,0.2)] sm:mt-6 xl:mt-8">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-white/70">Link publik</p>
+                <p className="mt-2 break-all text-sm font-medium leading-6">{bookingLink}</p>
+              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-teal-100">
+                <ArrowUpRight className="h-4 w-4" />
+              </span>
+            </div>
             <p className="mt-3 text-xs leading-6 text-white/70">
               Siap dibagikan ke Instagram bio, WhatsApp, dan Google Business Profile.
             </p>
-            <Link
-              href="/onboarding"
-              className="mt-4 inline-flex text-xs font-semibold text-teal-200"
-            >
-              Atur profil bisnis
-            </Link>
-            <form action={logoutOwner} className="mt-3">
-              <button type="submit" className="inline-flex text-xs font-semibold text-white/80">
-                Logout
-              </button>
-            </form>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Link href="/onboarding" className="inline-flex text-xs font-semibold text-teal-200">
+                Atur profil bisnis
+              </Link>
+              <form action={logoutOwner}>
+                <button type="submit" className="inline-flex text-xs font-semibold text-white/80">
+                  Logout
+                </button>
+              </form>
+            </div>
           </div>
         </aside>
 
-        <main>{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );
