@@ -1,6 +1,6 @@
 "use server";
 
-import { BookingStatus as PrismaBookingStatus, Prisma } from "@prisma/client";
+import { Prisma, BookingStatus as PrismaBookingStatus } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";

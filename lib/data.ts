@@ -1,4 +1,4 @@
-import { BookingStatus as PrismaBookingStatus, Prisma } from "@prisma/client";
+import { Prisma, BookingStatus as PrismaBookingStatus } from "@prisma/client";
 import { getOptionalSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
