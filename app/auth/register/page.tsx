@@ -28,7 +28,7 @@ export default async function RegisterPage({
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Daftarkan bisnis ke Temujanji</h1>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Register owner akan langsung membuat akun, bisnis awal, default jam operasional, lalu masuk ke onboarding agar app bisa dipakai end-to-end.
+          Buat akun untuk mulai menerima booking online dan mengatur jadwal bisnismu dengan lebih rapi.
         </p>
 
         <FeedbackBanner feedback={feedback} className="mt-6" />

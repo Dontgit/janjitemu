@@ -33,7 +33,7 @@ export default async function LoginPage({
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Masuk ke dashboard Temujanji</h1>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Login owner memakai session cookie `httpOnly` yang ditandatangani. Pastikan `DATABASE_URL` dan `AUTH_SECRET` sudah terisi agar auth aktif penuh.
+          Masuk untuk mengelola layanan, jadwal, dan booking pelanggan dari satu tempat.
         </p>
 
         <FeedbackBanner feedback={feedback} className="mt-6" />

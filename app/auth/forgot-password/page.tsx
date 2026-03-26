@@ -27,7 +27,7 @@ export default async function ForgotPasswordPage({
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">Reset password</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Lupa password owner</h1>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Versi MVP ini belum mengirim email otomatis. Sebagai gantinya, sistem membuat link reset sekali pakai yang bisa langsung dibuka, dengan throttling dasar agar tidak mudah disalahgunakan.
+          Masukkan email akunmu, lalu gunakan tautan pemulihan yang muncul untuk mengganti password.
         </p>
 
         <FeedbackBanner feedback={feedback} className="mt-6" />
