@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  STAFF
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String
+  passwordHash        String?
+  sessionVersion      Int                  @default(0)
+  role                UserRole             @default(OWNER)
+  businesses          Business[]
+  passwordResetTokens PasswordResetToken[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Business {
+  id                  String         @id @default(cuid())
+  ownerId             String
+  name                String
+  slug                String         @unique
+  category            String
+  city                String
+  description         String
+  bookingLink         String?
+  reminderChannel     String?
+  phone               String?
+  email               String?
+  onboardingCompleted Boolean        @default(false)
+  owner               User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  services            Service[]
+  bookings            Booking[]
+  customers           Customer[]
+  businessHours       BusinessHour[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([ownerId])
+}
+
+model Service {
+  id            String    @id @default(cuid())
+  businessId    String
+  name          String
+  description   String
+  durationMins  Int
+  price         Int
+  isActive      Boolean   @default(true)
+  isPopular     Boolean   @default(false)
+  bookings      Booking[]
+  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([businessId, isActive])
+}
+
+model Customer {
+  id         String    @id @default(cuid())
+  businessId String
+  name       String
+  phone      String
+  email      String?
+  source     String?
+  notes      String?
+  bookings   Booking[]
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([businessId])
+  @@unique([businessId, phone])
+}
+
+model Booking {
+  id                      String        @id @default(cuid())
+  businessId              String
+  customerId              String
+  serviceId               String
+  scheduledAt             DateTime
+  endAt                   DateTime
+  status                  BookingStatus @default(PENDING)
+  notes                   String?
+  customerNameSnapshot    String
+  customerPhoneSnapshot   String
+  customerEmailSnapshot   String?
+  serviceNameSnapshot     String
+  servicePriceSnapshot    Int
+  serviceDurationSnapshot Int
+  business                Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer                Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  service                 Service       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  @@index([businessId, scheduledAt])
+  @@index([customerId])
+  @@index([serviceId])
+}
+
+model BusinessHour {
+  id         String   @id @default(cuid())
+  businessId String
+  dayOfWeek  Int
+  openTime   String
+  closeTime  String
+  isActive   Boolean  @default(true)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([businessId, dayOfWeek])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model AuthRateLimit {
+  id          String   @id @default(cuid())
+  scope       String
+  identifier  String
+  hits        Int      @default(0)
+  windowStart DateTime
+  blockedUntil DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([scope, identifier])
+  @@index([scope, blockedUntil])
+}
