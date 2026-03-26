@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, BookingStatus as PrismaBookingStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -184,17 +184,17 @@ function getBoolean(formData: FormData, key: string) {
 function parseStatus(value: string) {
   switch (value) {
     case "confirmed":
-      return PrismaBookingStatus.CONFIRMED;
+      return "CONFIRMED";
     case "rescheduled":
-      return PrismaBookingStatus.RESCHEDULED;
+      return "RESCHEDULED";
     case "completed":
-      return PrismaBookingStatus.COMPLETED;
+      return "COMPLETED";
     case "cancelled":
-      return PrismaBookingStatus.CANCELLED;
+      return "CANCELLED";
     case "no-show":
-      return PrismaBookingStatus.NO_SHOW;
+      return "NO_SHOW";
     default:
-      return PrismaBookingStatus.PENDING;
+      return "PENDING";
   }
 }
 
@@ -390,7 +390,7 @@ async function findConflictingBooking({
     where: {
       businessId,
       id: ignoredBookingId ? { not: ignoredBookingId } : undefined,
-      status: { not: PrismaBookingStatus.CANCELLED },
+      status: { not: "CANCELLED" },
       scheduledAt: { lt: endAt },
       endAt: { gt: scheduledAt }
     },

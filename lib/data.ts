@@ -1,4 +1,4 @@
-import { Prisma, BookingStatus as PrismaBookingStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { getOptionalSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -36,17 +36,17 @@ const labelFormatter = new Intl.DateTimeFormat("id-ID", {
   month: "long"
 });
 
-function mapStatus(status: PrismaBookingStatus): BookingStatus {
+function mapStatus(status: string): BookingStatus {
   switch (status) {
-    case PrismaBookingStatus.CONFIRMED:
+    case "CONFIRMED":
       return "confirmed";
-    case PrismaBookingStatus.RESCHEDULED:
+    case "RESCHEDULED":
       return "rescheduled";
-    case PrismaBookingStatus.COMPLETED:
+    case "COMPLETED":
       return "completed";
-    case PrismaBookingStatus.CANCELLED:
+    case "CANCELLED":
       return "cancelled";
-    case PrismaBookingStatus.NO_SHOW:
+    case "NO_SHOW":
       return "no-show";
     default:
       return "pending";
@@ -89,8 +89,8 @@ function normalizeBusinessId(businessId?: string) {
   return businessId || undefined;
 }
 
-function isBlockingStatus(status: BookingStatus | PrismaBookingStatus) {
-  return status !== "cancelled" && status !== PrismaBookingStatus.CANCELLED;
+function isBlockingStatus(status: BookingStatus | string) {
+  return status !== "cancelled" && status !== "CANCELLED";
 }
 
 function getBookingRange(booking: Booking) {
@@ -124,7 +124,7 @@ function buildBookingFromDb(booking: {
   scheduledAt: Date;
   endAt: Date;
   serviceDurationSnapshot: number;
-  status: PrismaBookingStatus;
+  status: string;
   notes: string | null;
 }) {
   return {
@@ -275,17 +275,17 @@ function getBookingWhereClause(businessId: string, params: Omit<BookingListParam
 function parsePrismaBookingStatus(status?: string) {
   switch (status) {
     case "confirmed":
-      return PrismaBookingStatus.CONFIRMED;
+      return "CONFIRMED";
     case "rescheduled":
-      return PrismaBookingStatus.RESCHEDULED;
+      return "RESCHEDULED";
     case "completed":
-      return PrismaBookingStatus.COMPLETED;
+      return "COMPLETED";
     case "cancelled":
-      return PrismaBookingStatus.CANCELLED;
+      return "CANCELLED";
     case "no-show":
-      return PrismaBookingStatus.NO_SHOW;
+      return "NO_SHOW";
     case "pending":
-      return PrismaBookingStatus.PENDING;
+      return "PENDING";
     default:
       return undefined;
   }
@@ -838,11 +838,11 @@ export async function getBookingSummary(businessId?: string): Promise<BookingSum
 
     const [total, pending, confirmed, completed, cancelled, noShow, upcoming, today] = await Promise.all([
       prisma.booking.count({ where: { businessId: business.id } }),
-      prisma.booking.count({ where: { businessId: business.id, status: PrismaBookingStatus.PENDING } }),
-      prisma.booking.count({ where: { businessId: business.id, status: PrismaBookingStatus.CONFIRMED } }),
-      prisma.booking.count({ where: { businessId: business.id, status: PrismaBookingStatus.COMPLETED } }),
-      prisma.booking.count({ where: { businessId: business.id, status: PrismaBookingStatus.CANCELLED } }),
-      prisma.booking.count({ where: { businessId: business.id, status: PrismaBookingStatus.NO_SHOW } }),
+      prisma.booking.count({ where: { businessId: business.id, status: "PENDING" } }),
+      prisma.booking.count({ where: { businessId: business.id, status: "CONFIRMED" } }),
+      prisma.booking.count({ where: { businessId: business.id, status: "COMPLETED" } }),
+      prisma.booking.count({ where: { businessId: business.id, status: "CANCELLED" } }),
+      prisma.booking.count({ where: { businessId: business.id, status: "NO_SHOW" } }),
       prisma.booking.count({ where: { businessId: business.id, scheduledAt: { gte: now } } }),
       prisma.booking.count({
         where: {
