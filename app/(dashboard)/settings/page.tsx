@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Textarea } from "@/components/ui/textarea";
 import { TutorialResetButton } from "@/components/ui/tutorial-reset-button";
+import { TimeSelect } from "@/components/ui/time-select";
 import { getBusinessHours, getOwnerBusiness } from "@/lib/data";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 
@@ -151,9 +152,27 @@ export default async function SettingsPage({
                           <input type="checkbox" name={`active-${hour.dayOfWeek}`} defaultChecked={hour.active} />
                           Aktifkan hari ini
                         </label>
-                        <div className="mt-3 grid grid-cols-2 gap-3">
-                          <Input name={`open-${hour.dayOfWeek}`} defaultValue={hour.open} type="time" />
-                          <Input name={`close-${hour.dayOfWeek}`} defaultValue={hour.close} type="time" />
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Jam buka</p>
+                            <TimeSelect
+                              hourName={`open-${hour.dayOfWeek}-hour`}
+                              minuteName={`open-${hour.dayOfWeek}-minute`}
+                              defaultValue={hour.open}
+                              disabled={!hour.active}
+                            />
+                            <input type="hidden" name={`open-${hour.dayOfWeek}`} value={hour.open} />
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Jam tutup</p>
+                            <TimeSelect
+                              hourName={`close-${hour.dayOfWeek}-hour`}
+                              minuteName={`close-${hour.dayOfWeek}-minute`}
+                              defaultValue={hour.close}
+                              disabled={!hour.active}
+                            />
+                            <input type="hidden" name={`close-${hour.dayOfWeek}`} value={hour.close} />
+                          </div>
                         </div>
                       </div>
                     ))}

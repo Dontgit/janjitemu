@@ -1252,6 +1252,16 @@ export async function saveBusinessProfile(formData: FormData) {
   });
 
   for (const hour of defaultHours) {
+    const openHour = getValue(formData, `open-${hour.dayOfWeek}-hour`);
+    const openMinute = getValue(formData, `open-${hour.dayOfWeek}-minute`);
+    const closeHour = getValue(formData, `close-${hour.dayOfWeek}-hour`);
+    const closeMinute = getValue(formData, `close-${hour.dayOfWeek}-minute`);
+
+    const openTime =
+      openHour && openMinute ? `${openHour}:${openMinute}` : getValue(formData, `open-${hour.dayOfWeek}`) || hour.openTime;
+    const closeTime =
+      closeHour && closeMinute ? `${closeHour}:${closeMinute}` : getValue(formData, `close-${hour.dayOfWeek}`) || hour.closeTime;
+
     await prisma.businessHour.upsert({
       where: {
         businessId_dayOfWeek: {
@@ -1260,15 +1270,15 @@ export async function saveBusinessProfile(formData: FormData) {
         }
       },
       update: {
-        openTime: getValue(formData, `open-${hour.dayOfWeek}`) || hour.openTime,
-        closeTime: getValue(formData, `close-${hour.dayOfWeek}`) || hour.closeTime,
+        openTime,
+        closeTime,
         isActive: getBoolean(formData, `active-${hour.dayOfWeek}`)
       },
       create: {
         businessId: business.id,
         dayOfWeek: hour.dayOfWeek,
-        openTime: getValue(formData, `open-${hour.dayOfWeek}`) || hour.openTime,
-        closeTime: getValue(formData, `close-${hour.dayOfWeek}`) || hour.closeTime,
+        openTime,
+        closeTime,
         isActive: getBoolean(formData, `active-${hour.dayOfWeek}`)
       }
     });
