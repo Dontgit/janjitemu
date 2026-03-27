@@ -90,16 +90,6 @@ export async function DashboardShell({
                 </p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="surface-subtle rounded-[20px] p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Mode</p>
-                <p className="mt-1 font-semibold text-[var(--foreground)]">Operational</p>
-              </div>
-              <div className="surface-subtle rounded-[20px] p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Scope</p>
-                <p className="mt-1 font-semibold text-[var(--foreground)]">Owner dashboard</p>
-              </div>
-            </div>
           </div>
 
           <div className="mb-4 mt-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:hidden">
