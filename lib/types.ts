@@ -123,6 +123,12 @@ export type TeamMember = {
   serviceNames?: string[];
   weeklyAvailability?: TeamMemberAvailability[];
   weeklyAvailabilityNote?: string | null;
+  serviceFit?: boolean;
+  dailyLoad?: number | null;
+  availabilityFit?: boolean | null;
+  hasBookingConflict?: boolean;
+  assignmentWarnings?: string[];
+  assignmentHint?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };

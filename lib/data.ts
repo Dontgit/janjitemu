@@ -283,6 +283,84 @@ function getBookingDateTime(booking: Booking) {
   return combineDateTime(booking.date, booking.time);
 }
 
+function getBookingEndDateTime(booking: Booking) {
+  if (booking.endDate && booking.endTime) {
+    return combineDateTime(booking.endDate, booking.endTime);
+  }
+
+  return addMinutes(getBookingDateTime(booking), booking.totalDuration ?? booking.duration ?? 30);
+}
+
+function getAssignmentWarningsForMember({
+  member,
+  bookings,
+  serviceId,
+  date,
+  time,
+  endTime,
+  ignoredBookingId
+}: {
+  member: TeamMember;
+  bookings: Booking[];
+  serviceId?: string;
+  date?: string;
+  time?: string;
+  endTime?: string;
+  ignoredBookingId?: string | null;
+}) {
+  const warnings: string[] = [];
+  const matchesService = !serviceId || (member.serviceIds ?? []).includes(serviceId);
+
+  if (!(member.active ?? true)) {
+    warnings.push("staff nonaktif");
+  }
+
+  if (!matchesService) {
+    warnings.push("di luar service fit");
+  }
+
+  let availabilityFit: boolean | null = null;
+  let hasBookingConflict = false;
+
+  if (date && time && endTime) {
+    const slotStart = combineDateTime(date, time);
+    const slotEnd = combineDateTime(date, endTime);
+    const weeklyAvailability = (member.weeklyAvailability ?? []).find((item) => item.dayOfWeek === slotStart.getDay());
+    availabilityFit = Boolean(
+      weeklyAvailability &&
+      weeklyAvailability.isAvailable &&
+      time >= weeklyAvailability.startTime &&
+      endTime <= weeklyAvailability.endTime
+    );
+
+    if (!availabilityFit) {
+      if (!weeklyAvailability || !weeklyAvailability.isAvailable) {
+        warnings.push("tidak tersedia di hari itu");
+      } else {
+        warnings.push(`di luar jam ${weeklyAvailability.startTime}-${weeklyAvailability.endTime}`);
+      }
+    }
+
+    hasBookingConflict = bookings.some((booking) => {
+      if (booking.id === ignoredBookingId) return false;
+      if (booking.assignedTeamMemberId !== member.id || booking.status === "cancelled") return false;
+      return slotStart < getBookingEndDateTime(booking) && slotEnd > getBookingDateTime(booking);
+    });
+
+    if (hasBookingConflict) {
+      warnings.push("sudah ada booking bentrok");
+    }
+  }
+
+  return {
+    matchesService,
+    availabilityFit,
+    hasBookingConflict,
+    warnings,
+    hint: warnings.length > 0 ? warnings.join(" • ") : "Siap dipakai untuk slot ini"
+  };
+}
+
 function isSameDay(left: Date, right: Date) {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -1837,11 +1915,17 @@ export async function getAssignableTeamMembers({
   businessId,
   serviceId,
   date,
+  time,
+  endTime,
+  ignoredBookingId,
   includeInactiveAssignedTeamMemberId
 }: {
   businessId?: string;
   serviceId?: string;
   date?: string;
+  time?: string;
+  endTime?: string;
+  ignoredBookingId?: string | null;
   includeInactiveAssignedTeamMemberId?: string | null;
 } = {}) {
   const [members, bookings] = await Promise.all([getTeamMembers(businessId), getBookings(businessId)]);
@@ -1849,21 +1933,35 @@ export async function getAssignableTeamMembers({
   return members
     .filter((member) => (member.active ?? true) || member.id === includeInactiveAssignedTeamMemberId)
     .map((member) => {
-      const matchesService = !serviceId || (member.serviceIds ?? []).includes(serviceId);
       const dailyLoad = date
-        ? bookings.filter((booking) => booking.date === date && booking.assignedTeamMemberId === member.id && booking.status !== "cancelled").length
+        ? bookings.filter((booking) => booking.date === date && booking.assignedTeamMemberId === member.id && booking.status !== "cancelled" && booking.id !== ignoredBookingId).length
         : null;
+      const assignmentState = getAssignmentWarningsForMember({
+        member,
+        bookings,
+        serviceId,
+        date,
+        time,
+        endTime,
+        ignoredBookingId
+      });
 
       return {
         ...member,
-        serviceFit: matchesService,
-        dailyLoad
+        serviceFit: assignmentState.matchesService,
+        dailyLoad,
+        availabilityFit: assignmentState.availabilityFit,
+        hasBookingConflict: assignmentState.hasBookingConflict,
+        assignmentWarnings: assignmentState.warnings,
+        assignmentHint: assignmentState.hint
       };
     })
     .sort((left, right) => {
       const leftActive = left.active ?? true;
       const rightActive = right.active ?? true;
       if (leftActive !== rightActive) return leftActive ? -1 : 1;
+      if ((left.hasBookingConflict ?? false) !== (right.hasBookingConflict ?? false)) return left.hasBookingConflict ? 1 : -1;
+      if ((left.availabilityFit ?? true) !== (right.availabilityFit ?? true)) return left.availabilityFit ? -1 : 1;
       if (left.serviceFit !== right.serviceFit) return left.serviceFit ? -1 : 1;
       return (left.dailyLoad ?? 0) - (right.dailyLoad ?? 0) || left.name.localeCompare(right.name, "id");
     });

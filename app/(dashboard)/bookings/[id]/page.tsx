@@ -31,6 +31,9 @@ export default async function BookingDetailPage({
   const assignableTeamMembers = await getAssignableTeamMembers({
     serviceId: booking.serviceId,
     date: booking.date,
+    time: booking.time,
+    endTime: booking.endTime,
+    ignoredBookingId: booking.id,
     includeInactiveAssignedTeamMemberId: booking.assignedTeamMemberId
   });
   const redirectTo = `/bookings/${booking.id}`;
@@ -254,11 +257,16 @@ export default async function BookingDetailPage({
                     <option value="unassigned">Belum di-assign</option>
                     {assignableTeamMembers.map((member) => (
                       <option key={member.id} value={member.id}>
-                        {member.name} • {member.roleLabel}{member.serviceFit ? "" : " • di luar service fit"}{typeof member.dailyLoad === "number" ? ` • ${member.dailyLoad} booking hari itu` : ""}{member.active ? "" : " • nonaktif"}
+                        {member.name} • {member.roleLabel}
+                        {member.assignmentWarnings && member.assignmentWarnings.length > 0
+                          ? ` • ${member.assignmentWarnings.join(" • ")}`
+                          : typeof member.dailyLoad === "number"
+                            ? ` • ${member.dailyLoad} booking hari itu`
+                            : ""}
                       </option>
                     ))}
                   </Select>
-                  <p className="mt-2 text-xs text-[var(--muted)]">Urutan staff diprioritaskan aktif, cocok layanan, lalu workload harian paling ringan.</p>
+                  <p className="mt-2 text-xs text-[var(--muted)]">Urutan staff diprioritaskan yang tidak bentrok, masih available di weekly schedule, cocok layanan, lalu workload harian paling ringan. Simpan akan ditolak kalau staff bentrok atau di luar jam availability.</p>
                 </div>
                 <div className="form-field">
                   <span className="form-label">Catatan</span>

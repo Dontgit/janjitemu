@@ -216,11 +216,17 @@ function parseAssignedTeamMemberId(value: string) {
 async function validateAssignedTeamMember({
   businessId,
   assignedTeamMemberId,
-  serviceId
+  serviceId,
+  scheduledAt,
+  endAt,
+  ignoredBookingId
 }: {
   businessId: string;
   assignedTeamMemberId: string | null;
   serviceId: string;
+  scheduledAt?: Date;
+  endAt?: Date;
+  ignoredBookingId?: string;
 }) {
   if (!assignedTeamMemberId) {
     return { teamMemberId: null, warning: null };
@@ -231,6 +237,10 @@ async function validateAssignedTeamMember({
     include: {
       serviceAssignments: {
         select: { serviceId: true }
+      },
+      weeklyAvailability: {
+        where: scheduledAt ? { dayOfWeek: scheduledAt.getDay() } : undefined,
+        select: { dayOfWeek: true, startTime: true, endTime: true, isAvailable: true }
       }
     }
   });
@@ -241,6 +251,47 @@ async function validateAssignedTeamMember({
 
   if (!member.isActive) {
     return { error: "Staff yang dipilih sedang nonaktif. Pilih staff aktif atau kosongkan assignment." };
+  }
+
+  if (scheduledAt && endAt) {
+    const dayAvailability = member.weeklyAvailability[0];
+    const bookingDate = formatDateInputValue(scheduledAt);
+    const bookingStartTime = formatTimeInputValue(scheduledAt);
+    const bookingEndTime = formatTimeInputValue(endAt);
+
+    if (!dayAvailability || !dayAvailability.isAvailable) {
+      return { error: `${member.name} tidak tersedia pada hari tersebut. Pilih staff lain atau kosongkan assignment.` };
+    }
+
+    if (bookingStartTime < dayAvailability.startTime || bookingEndTime > dayAvailability.endTime) {
+      return {
+        error: `${member.name} hanya tersedia ${dayAvailability.startTime}-${dayAvailability.endTime} pada hari itu, jadi assignment ini belum bisa dipakai.`
+      };
+    }
+
+    const conflictingBooking = await prisma.booking.findFirst({
+      where: {
+        businessId,
+        id: ignoredBookingId ? { not: ignoredBookingId } : undefined,
+        assignedTeamMemberId: member.id,
+        status: { not: "CANCELLED" },
+        scheduledAt: { lt: endAt },
+        endAt: { gt: scheduledAt }
+      },
+      orderBy: { scheduledAt: "asc" },
+      select: {
+        id: true,
+        customerNameSnapshot: true,
+        scheduledAt: true,
+        endAt: true
+      }
+    });
+
+    if (conflictingBooking) {
+      return {
+        error: `${member.name} sudah punya booking bentrok pada ${bookingDate} ${formatTimeInputValue(conflictingBooking.scheduledAt)}-${formatTimeInputValue(conflictingBooking.endAt)}.`
+      };
+    }
   }
 
   const matchesService = member.serviceAssignments.some((item) => item.serviceId === serviceId);
@@ -380,6 +431,19 @@ function parseBookingSlotInterval(value: string) {
 function parseBookingBuffer(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function formatDateInputValue(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatTimeInputValue(value: Date) {
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 function parseFollowUpStatus(value: string) {
@@ -704,7 +768,9 @@ async function createBookingRecord({
   const assignmentValidation = await validateAssignedTeamMember({
     businessId,
     assignedTeamMemberId: assignedTeamMemberId ?? null,
-    serviceId: service.id
+    serviceId: service.id,
+    scheduledAt,
+    endAt
   });
 
   if (assignmentValidation.error) {
@@ -1535,7 +1601,10 @@ export async function updateBookingStatus(formData: FormData) {
   const assignmentValidation = await validateAssignedTeamMember({
     businessId: business.id,
     assignedTeamMemberId,
-    serviceId: booking.serviceId
+    serviceId: booking.serviceId,
+    scheduledAt,
+    endAt,
+    ignoredBookingId: booking.id
   });
 
   if (assignmentValidation.error) {
