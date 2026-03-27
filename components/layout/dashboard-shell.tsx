@@ -89,7 +89,7 @@ export async function DashboardShell({
             Navigasi cepat
           </div>
 
-          <nav className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 xl:mx-0 xl:block xl:overflow-visible xl:px-0 xl:pb-0">
+          <nav className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 xl:mx-0 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overflow-x-hidden xl:px-0 xl:pb-4">
             {linkGroups.map((group) => (
               <div key={group.label} className="min-w-fit xl:min-w-0 xl:pb-4 xl:last:pb-0">
                 <div className="mb-2 hidden px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:block">
