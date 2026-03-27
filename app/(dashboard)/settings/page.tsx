@@ -3,14 +3,15 @@ import { Globe, Settings2, ShieldCheck, Sparkles } from "lucide-react";
 import { saveBusinessProfile } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { FormSection } from "@/components/ui/form-section";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Textarea } from "@/components/ui/textarea";
 import { TutorialResetButton } from "@/components/ui/tutorial-reset-button";
-import { buttonVariants } from "@/components/ui/button";
 import { getBusinessHours, getOwnerBusiness } from "@/lib/data";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 
@@ -97,71 +98,65 @@ export default async function SettingsPage({
             <form action={saveBusinessProfile} className="space-y-8">
               <input type="hidden" name="redirectTo" value="/settings" />
 
-              <section data-tutorial="settings-profile" className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <span className="icon-chip">
-                    <Sparkles className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-lg font-semibold">Profil bisnis</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Pastikan identitas usaha terlihat rapi di dashboard internal dan halaman booking publik.</p>
-                  </div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input name="name" defaultValue={businessProfile.name} placeholder="Nama bisnis" required />
-                  <Input name="category" defaultValue={businessProfile.category} placeholder="Kategori" required />
-                  <Input name="city" defaultValue={businessProfile.city} placeholder="Kota" required />
-                  <Input name="reminderChannel" defaultValue={businessProfile.reminderChannel} placeholder="Reminder channel" />
-                  <Input name="slug" defaultValue={businessProfile.slug} placeholder="Slug booking" required />
-                  <Input name="bookingSlotInterval" type="number" min="5" step="5" defaultValue={businessProfile.bookingSlotInterval ?? 15} placeholder="Interval slot booking (menit)" required />
-                  <Input name="bookingBufferMins" type="number" min="0" step="5" defaultValue={businessProfile.bookingBufferMins ?? 0} placeholder="Buffer antar booking (menit)" required />
-                  <Input name="phone" defaultValue={businessProfile.phone} placeholder="Nomor WhatsApp bisnis" />
-                  <div className="sm:col-span-2">
-                    <Input name="email" defaultValue={businessProfile.email} type="email" placeholder="Email bisnis" />
-                  </div>
-                  <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
-                    Link booking publik akan dibentuk otomatis menjadi <span className="font-semibold text-[var(--foreground)]">temujanji.app/book/{businessProfile.slug ?? "temujanji-studio"}</span> setelah disimpan.
-                  </div>
-                  <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
-                    Buffer dipakai untuk memberi jeda antar booking saat cek ketersediaan publik dan bentrok internal. Isi <span className="font-semibold text-[var(--foreground)]">0</span> bila tidak perlu jeda tambahan.
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Textarea name="description" defaultValue={businessProfile.description} rows={5} placeholder="Deskripsi bisnis" />
-                  </div>
-                </div>
-              </section>
-
-              <section data-tutorial="settings-hours" className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <span className="icon-chip">
-                    <Globe className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-lg font-semibold">Jam operasional</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Atur hari aktif, rentang jam, dan granularity slot supaya availability publik benar-benar mengikuti ritme operasional bisnis.</p>
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {businessHours.map((hour) => (
-                    <div key={hour.day} className="surface-card rounded-[24px] p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium">{hour.day}</p>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hour.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                          {hour.active ? "Aktif" : "Libur"}
-                        </span>
-                      </div>
-                      <label className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
-                        <input type="checkbox" name={`active-${hour.dayOfWeek}`} defaultChecked={hour.active} />
-                        Aktif
-                      </label>
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <Input name={`open-${hour.dayOfWeek}`} defaultValue={hour.open} type="time" />
-                        <Input name={`close-${hour.dayOfWeek}`} defaultValue={hour.close} type="time" />
-                      </div>
+              <div data-tutorial="settings-profile">
+                <FormSection
+                  eyebrow="Bagian 1"
+                  title="Profil bisnis"
+                  description="Pastikan identitas usaha terlihat rapi di dashboard internal dan halaman booking publik."
+                >
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input name="name" defaultValue={businessProfile.name} placeholder="Nama bisnis" required />
+                    <Input name="category" defaultValue={businessProfile.category} placeholder="Kategori" required />
+                    <Input name="city" defaultValue={businessProfile.city} placeholder="Kota" required />
+                    <Input name="reminderChannel" defaultValue={businessProfile.reminderChannel} placeholder="Reminder channel" />
+                    <Input name="slug" defaultValue={businessProfile.slug} placeholder="Slug booking" required />
+                    <Input name="bookingSlotInterval" type="number" min="5" step="5" defaultValue={businessProfile.bookingSlotInterval ?? 15} placeholder="Interval slot booking (menit)" required />
+                    <Input name="bookingBufferMins" type="number" min="0" step="5" defaultValue={businessProfile.bookingBufferMins ?? 0} placeholder="Buffer antar booking (menit)" required />
+                    <Input name="phone" defaultValue={businessProfile.phone} placeholder="Nomor WhatsApp bisnis" />
+                    <div className="sm:col-span-2">
+                      <Input name="email" defaultValue={businessProfile.email} type="email" placeholder="Email bisnis" />
                     </div>
-                  ))}
-                </div>
-              </section>
+                    <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
+                      Link booking publik akan dibentuk otomatis menjadi <span className="font-semibold text-[var(--foreground)]">temujanji.app/book/{businessProfile.slug ?? "temujanji-studio"}</span> setelah disimpan.
+                    </div>
+                    <div className="sm:col-span-2 field-card rounded-[24px] p-4 text-sm leading-6 text-[var(--muted)]">
+                      Buffer dipakai untuk memberi jeda antar booking saat cek ketersediaan publik dan bentrok internal. Isi <span className="font-semibold text-[var(--foreground)]">0</span> bila tidak perlu jeda tambahan.
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Textarea name="description" defaultValue={businessProfile.description} rows={5} placeholder="Deskripsi bisnis" />
+                    </div>
+                  </div>
+                </FormSection>
+              </div>
+
+              <div data-tutorial="settings-hours">
+                <FormSection
+                  eyebrow="Bagian 2"
+                  title="Jam operasional"
+                  description="Atur hari aktif, rentang jam, dan granularity slot supaya availability publik benar-benar mengikuti ritme operasional bisnis."
+                >
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {businessHours.map((hour) => (
+                      <div key={hour.day} className="surface-card rounded-[24px] p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium">{hour.day}</p>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hour.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                            {hour.active ? "Aktif" : "Libur"}
+                          </span>
+                        </div>
+                        <label className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
+                          <input type="checkbox" name={`active-${hour.dayOfWeek}`} defaultChecked={hour.active} />
+                          Aktif
+                        </label>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                          <Input name={`open-${hour.dayOfWeek}`} defaultValue={hour.open} type="time" />
+                          <Input name={`close-${hour.dayOfWeek}`} defaultValue={hour.close} type="time" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </FormSection>
+              </div>
 
               <div data-tutorial="settings-go-live" className="flex flex-wrap gap-3">
                 <SubmitButton>Simpan perubahan</SubmitButton>
