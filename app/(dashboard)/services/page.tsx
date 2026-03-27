@@ -124,7 +124,7 @@ export default async function ServicesPage({
               </div>
             }
           >
-            <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
+            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto] xl:items-end" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={services.perPage} />
               <Input name="q" placeholder="Cari nama / deskripsi layanan" defaultValue={query} />

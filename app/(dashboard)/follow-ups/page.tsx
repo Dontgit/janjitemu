@@ -90,7 +90,7 @@ export default async function FollowUpsPage({
           title="Cari card yang relevan"
           description="Saring berdasarkan customer, WhatsApp, atau layanan untuk review follow up yang lebih fokus."
         >
-          <form className="grid gap-3 lg:w-full lg:max-w-[520px] lg:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
+          <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto] xl:items-end" method="get">
             <div className="form-field">
               <span className="form-label">Keyword</span>
               <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / WhatsApp" />

@@ -12,8 +12,8 @@ type FilterShellProps = {
 export function FilterShell({ title, description, children, footer }: FilterShellProps) {
   return (
     <Card className="p-6 xl:p-7">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)] xl:items-end xl:gap-5">
+        <div className="min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
             <Filter className="h-3.5 w-3.5" />
             Filter
@@ -21,7 +21,7 @@ export function FilterShell({ title, description, children, footer }: FilterShel
           <p className="mt-3 text-lg font-semibold">{title}</p>
           <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
         </div>
-        <div className="min-w-0 w-full lg:w-auto">{children}</div>
+        <div className="min-w-0 w-full">{children}</div>
       </div>
       {footer ? <div className="mt-4 text-sm text-[var(--muted)]">{footer}</div> : null}
     </Card>
