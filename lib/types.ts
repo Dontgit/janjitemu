@@ -48,6 +48,11 @@ export type Booking = {
   email?: string | null;
   serviceId: string;
   serviceName: string;
+  assignedTeamMemberId?: string | null;
+  assignedStaffName?: string | null;
+  assignedStaffActive?: boolean | null;
+  assignedStaffServiceFit?: boolean | null;
+  assignedStaffDailyLoad?: number | null;
   addOns?: BookingAddOn[];
   date: string;
   time: string;

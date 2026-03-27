@@ -201,7 +201,7 @@ export default async function DashboardPage() {
                           <StatusBadge status={booking.status} />
                         </div>
                         <p className="mt-2 text-sm text-[var(--muted)]">
-                          {booking.serviceName} • {booking.date} • {booking.time}
+                          {booking.serviceName} • {booking.date} • {booking.time}{booking.assignedStaffName ? ` • ${booking.assignedStaffName}` : ""}
                         </p>
                         {booking.notes ? (
                           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{booking.notes}</p>

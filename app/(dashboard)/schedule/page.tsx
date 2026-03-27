@@ -173,6 +173,12 @@ export default async function SchedulePage() {
                               <Layers3 className="h-4 w-4 text-[var(--primary)]" />
                               {booking.serviceName}
                             </span>
+                            {booking.assignedStaffName ? (
+                              <>
+                                <span>•</span>
+                                <span>{booking.assignedStaffName}</span>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                         <div className="text-sm sm:text-right">

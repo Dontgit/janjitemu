@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { updateBookingStatus } from "@/lib/actions";
-import { getBookingDetail, getOwnerBusiness } from "@/lib/data";
+import { getAssignableTeamMembers, getBookingDetail, getOwnerBusiness } from "@/lib/data";
 import { formatCurrency, formatDateTimeLabel, formatDurationLabel, formatLongDate } from "@/lib/utils";
 
 export default async function BookingDetailPage({
@@ -28,6 +28,11 @@ export default async function BookingDetailPage({
   }
 
   const { booking, customer, relatedBookings, stats } = detail;
+  const assignableTeamMembers = await getAssignableTeamMembers({
+    serviceId: booking.serviceId,
+    date: booking.date,
+    includeInactiveAssignedTeamMemberId: booking.assignedTeamMemberId
+  });
   const redirectTo = `/bookings/${booking.id}`;
 
   return (
@@ -108,6 +113,11 @@ export default async function BookingDetailPage({
                   <p className="mt-2 font-semibold">{booking.serviceName}</p>
                   <p className="mt-1 text-sm text-[var(--muted)]">{formatDurationLabel(booking.duration)} dasar • total {formatDurationLabel(booking.totalDuration ?? booking.duration)}</p>
                   <p className="mt-1 text-sm text-[var(--muted)]">{formatCurrency(booking.totalPrice ?? 0)}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Assigned staff</p>
+                  <p className="mt-2 font-semibold">{booking.assignedStaffName ?? "Belum di-assign"}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">{booking.assignedStaffName ? booking.assignedStaffServiceFit === false ? "Staff ini belum ditandai menangani layanan tersebut." : booking.assignedStaffActive === false ? "Staff saat ini nonaktif." : "Assignment terlihat sehat untuk operasional V1." : "Pilih staff dari panel update booking di kanan."}</p>
                 </div>
               </div>
 
@@ -237,6 +247,18 @@ export default async function BookingDetailPage({
                     <span className="form-label">Jam</span>
                     <Input name="time" type="time" defaultValue={booking.time} />
                   </div>
+                </div>
+                <div className="form-field">
+                  <span className="form-label">Assign staff</span>
+                  <Select name="assignedTeamMemberId" defaultValue={booking.assignedTeamMemberId ?? "unassigned"}>
+                    <option value="unassigned">Belum di-assign</option>
+                    {assignableTeamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name} • {member.roleLabel}{member.serviceFit ? "" : " • di luar service fit"}{typeof member.dailyLoad === "number" ? ` • ${member.dailyLoad} booking hari itu` : ""}{member.active ? "" : " • nonaktif"}
+                      </option>
+                    ))}
+                  </Select>
+                  <p className="mt-2 text-xs text-[var(--muted)]">Urutan staff diprioritaskan aktif, cocok layanan, lalu workload harian paling ringan.</p>
                 </div>
                 <div className="form-field">
                   <span className="form-label">Catatan</span>

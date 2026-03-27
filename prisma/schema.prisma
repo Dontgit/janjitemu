@@ -119,6 +119,7 @@ model TeamMember {
   business            Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceAssignments  TeamMemberService[]
   weeklyAvailability  TeamMemberAvailability[]
+  assignedBookings    Booking[]
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
@@ -176,6 +177,7 @@ model Booking {
   businessId              String
   customerId              String
   serviceId               String
+  assignedTeamMemberId    String?
   scheduledAt             DateTime
   endAt                   DateTime
   status                  BookingStatus  @default(PENDING)
@@ -198,12 +200,14 @@ model Booking {
   business                Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer                Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   service                 Service        @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  assignedTeamMember      TeamMember?    @relation(fields: [assignedTeamMemberId], references: [id], onDelete: SetNull)
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
 
   @@index([businessId, scheduledAt])
   @@index([customerId])
   @@index([serviceId])
+  @@index([assignedTeamMemberId])
   @@index([businessId, followUpStatus])
 }
 

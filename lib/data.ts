@@ -227,6 +227,13 @@ function buildBookingFromDb(booking: {
   followUpStatus?: string | null;
   followUpNote?: string | null;
   followUpNextActionAt?: Date | null;
+  assignedTeamMemberId?: string | null;
+  assignedTeamMember?: {
+    id: string;
+    name: string;
+    isActive: boolean;
+    serviceAssignments?: Array<{ serviceId: string }>;
+  } | null;
   createdAt?: Date;
   updatedAt?: Date;
 }) {
@@ -239,6 +246,12 @@ function buildBookingFromDb(booking: {
     email: booking.customerEmailSnapshot,
     serviceId: booking.serviceId,
     serviceName: booking.serviceNameSnapshot,
+    assignedTeamMemberId: booking.assignedTeamMemberId ?? null,
+    assignedStaffName: booking.assignedTeamMember?.name ?? null,
+    assignedStaffActive: booking.assignedTeamMember ? booking.assignedTeamMember.isActive : null,
+    assignedStaffServiceFit: booking.assignedTeamMember
+      ? booking.assignedTeamMember.serviceAssignments?.some((item) => item.serviceId === booking.serviceId) ?? false
+      : null,
     addOns: parseBookingAddOns(booking.addOnSummary),
     date: formatDate(booking.scheduledAt),
     time: formatTime(booking.scheduledAt),
@@ -676,6 +689,18 @@ export async function getBookings(businessId?: string): Promise<Booking[]> {
 
     const items = await prisma.booking.findMany({
       where: { businessId: business.id },
+      include: {
+        assignedTeamMember: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            serviceAssignments: {
+              select: { serviceId: true }
+            }
+          }
+        }
+      },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }]
     });
 
@@ -750,6 +775,18 @@ export async function getPaginatedBookings({
       prisma.booking.count({ where }),
       prisma.booking.findMany({
         where,
+        include: {
+          assignedTeamMember: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              serviceAssignments: {
+                select: { serviceId: true }
+              }
+            }
+          }
+        },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         skip: (safePage - 1) * perPage,
         take: perPage
@@ -762,6 +799,18 @@ export async function getPaginatedBookings({
     if (normalizedPage !== safePage) {
       const normalizedItems = await prisma.booking.findMany({
         where,
+        include: {
+          assignedTeamMember: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              serviceAssignments: {
+                select: { serviceId: true }
+              }
+            }
+          }
+        },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         skip: (normalizedPage - 1) * perPage,
         take: perPage
@@ -806,7 +855,17 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, businessId: business.id },
       include: {
-        customer: true
+        customer: true,
+        assignedTeamMember: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            serviceAssignments: {
+              select: { serviceId: true }
+            }
+          }
+        }
       }
     });
 
@@ -821,6 +880,18 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
           customerId: booking.customerId,
           id: { not: booking.id }
         },
+        include: {
+          assignedTeamMember: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              serviceAssignments: {
+                select: { serviceId: true }
+              }
+            }
+          }
+        },
         orderBy: { scheduledAt: "desc" },
         take: 4
       }),
@@ -828,6 +899,18 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
         where: {
           businessId: business.id,
           customerId: booking.customerId
+        },
+        include: {
+          assignedTeamMember: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              serviceAssignments: {
+                select: { serviceId: true }
+              }
+            }
+          }
         },
         orderBy: { scheduledAt: "desc" }
       })
@@ -1745,6 +1828,42 @@ function mapTeamMember(member: {
     createdAt: member.createdAt?.toISOString() ?? null,
     updatedAt: member.updatedAt?.toISOString() ?? null
   };
+}
+
+export async function getAssignableTeamMembers({
+  businessId,
+  serviceId,
+  date,
+  includeInactiveAssignedTeamMemberId
+}: {
+  businessId?: string;
+  serviceId?: string;
+  date?: string;
+  includeInactiveAssignedTeamMemberId?: string | null;
+} = {}) {
+  const [members, bookings] = await Promise.all([getTeamMembers(businessId), getBookings(businessId)]);
+
+  return members
+    .filter((member) => (member.active ?? true) || member.id === includeInactiveAssignedTeamMemberId)
+    .map((member) => {
+      const matchesService = !serviceId || (member.serviceIds ?? []).includes(serviceId);
+      const dailyLoad = date
+        ? bookings.filter((booking) => booking.date === date && booking.assignedTeamMemberId === member.id && booking.status !== "cancelled").length
+        : null;
+
+      return {
+        ...member,
+        serviceFit: matchesService,
+        dailyLoad
+      };
+    })
+    .sort((left, right) => {
+      const leftActive = left.active ?? true;
+      const rightActive = right.active ?? true;
+      if (leftActive !== rightActive) return leftActive ? -1 : 1;
+      if (left.serviceFit !== right.serviceFit) return left.serviceFit ? -1 : 1;
+      return (left.dailyLoad ?? 0) - (right.dailyLoad ?? 0) || left.name.localeCompare(right.name, "id");
+    });
 }
 
 export async function getTeamMembers(businessId?: string): Promise<TeamMember[]> {

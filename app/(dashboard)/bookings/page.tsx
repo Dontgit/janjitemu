@@ -14,7 +14,7 @@ import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
-import { getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
+import { getAssignableTeamMembers, getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
 import { formatDateTimeLabel } from "@/lib/utils";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { buildSearchPath, getSingleSearchParam, parsePaginationParams, replaceSearchParams } from "@/lib/search-params";
@@ -37,6 +37,7 @@ export default async function BookingsPage({
   const followUpStatus = getSingleSearchParam(resolvedSearchParams.followUpStatus);
   const serviceFilter = getSingleSearchParam(resolvedSearchParams.serviceId);
   const { page, perPage } = parsePaginationParams(resolvedSearchParams);
+  const assignableTeamMembers = await getAssignableTeamMembers();
   const paginatedBookings = await getPaginatedBookings({
     q: query,
     status,
@@ -216,6 +217,18 @@ export default async function BookingsPage({
               <span className="form-label">Jam</span>
               <Input name="time" type="time" required />
             </div>
+            <div className="form-field">
+              <span className="form-label">Assign staff</span>
+              <Select name="assignedTeamMemberId" defaultValue="unassigned">
+                <option value="unassigned">Belum di-assign</option>
+                {assignableTeamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} • {member.roleLabel}{member.serviceFit ? "" : " • di luar service fit"}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-2 text-xs text-[var(--muted)]">Staff aktif diprioritaskan. Hint service fit hanya panduan, belum hard enforcement.</p>
+            </div>
             {addOnServices.length > 0 ? (
               <div className="form-field md:col-span-2 xl:col-span-3">
                 <span className="form-label">Add-on tambahan</span>
@@ -288,6 +301,11 @@ export default async function BookingsPage({
                         <p className="mt-1 text-sm font-medium">{booking.date} • {booking.time}</p>
                         <p className="mt-1 text-xs text-[var(--muted)]">{booking.endTime ? `Selesai estimasi ${booking.endTime}` : "Estimasi selesai belum tersedia"}</p>
                       </div>
+                      <div className="surface-card rounded-[20px] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Staff</p>
+                        <p className="mt-1 break-words text-sm font-medium">{booking.assignedStaffName ?? "Belum di-assign"}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">{booking.assignedStaffName ? booking.assignedStaffServiceFit === false ? "Di luar service fit staff ini" : booking.assignedStaffActive === false ? "Staff sedang nonaktif" : "Siap dipakai untuk operasional" : "Pilih staff dari panel update booking"}</p>
+                      </div>
                       <div className="surface-card rounded-[20px] px-4 py-3 sm:col-span-2 lg:col-span-1">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Kontak</p>
                         <p className="mt-1 break-words text-sm font-medium">{booking.phone}{booking.email ? ` • ${booking.email}` : ""}</p>
@@ -352,6 +370,18 @@ export default async function BookingsPage({
                           <span className="form-label">Jam</span>
                           <Input name="time" type="time" defaultValue={booking.time} />
                         </div>
+                      </div>
+                      <div className="form-field">
+                        <span className="form-label">Assign staff</span>
+                        <Select name="assignedTeamMemberId" defaultValue={booking.assignedTeamMemberId ?? "unassigned"}>
+                          <option value="unassigned">Belum di-assign</option>
+                          {assignableTeamMembers.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.name} • {member.roleLabel}{member.serviceFit ? "" : " • di luar service fit"}{typeof member.dailyLoad === "number" ? ` • ${member.dailyLoad} booking hari itu` : ""}
+                            </option>
+                          ))}
+                        </Select>
+                        <p className="mt-2 text-xs text-[var(--muted)]">Hint kapasitas harian dihitung ringan dari jumlah booking staff di tanggal yang sama.</p>
                       </div>
                       <div className="form-field">
                         <span className="form-label">Catatan</span>

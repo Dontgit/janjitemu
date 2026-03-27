@@ -51,6 +51,7 @@ const MAX_ROLE_LENGTH = 80;
 const MAX_AVAILABILITY_LENGTH = 120;
 const WEEKLY_AVAILABILITY_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 const FOLLOW_UP_STATUSES = ["none", "needs-follow-up", "contacted", "offer-sent", "won", "lost"] as const;
+const UNASSIGNED_TEAM_MEMBER_VALUE = "unassigned";
 
 function normalizeText(value: string, maxLength: number) {
   return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
@@ -201,6 +202,53 @@ function parseStatus(value: string) {
     default:
       return "PENDING";
   }
+}
+
+function parseAssignedTeamMemberId(value: string) {
+  const normalized = value.trim();
+  if (!normalized || normalized === UNASSIGNED_TEAM_MEMBER_VALUE) {
+    return null;
+  }
+
+  return normalized;
+}
+
+async function validateAssignedTeamMember({
+  businessId,
+  assignedTeamMemberId,
+  serviceId
+}: {
+  businessId: string;
+  assignedTeamMemberId: string | null;
+  serviceId: string;
+}) {
+  if (!assignedTeamMemberId) {
+    return { teamMemberId: null, warning: null };
+  }
+
+  const member = await prisma.teamMember.findFirst({
+    where: { id: assignedTeamMemberId, businessId },
+    include: {
+      serviceAssignments: {
+        select: { serviceId: true }
+      }
+    }
+  });
+
+  if (!member) {
+    return { error: "Staff yang dipilih tidak ditemukan untuk bisnis ini." };
+  }
+
+  if (!member.isActive) {
+    return { error: "Staff yang dipilih sedang nonaktif. Pilih staff aktif atau kosongkan assignment." };
+  }
+
+  const matchesService = member.serviceAssignments.some((item) => item.serviceId === serviceId);
+
+  return {
+    teamMemberId: member.id,
+    warning: matchesService ? null : `${member.name} belum ditandai menangani layanan ini.`
+  };
 }
 
 function getRedirectTarget(formData: FormData, fallback: string) {
@@ -579,7 +627,8 @@ async function createBookingRecord({
   source,
   date,
   time,
-  notes
+  notes,
+  assignedTeamMemberId
 }: {
   businessId: string;
   serviceId: string;
@@ -591,6 +640,7 @@ async function createBookingRecord({
   date: string;
   time: string;
   notes: string | null;
+  assignedTeamMemberId?: string | null;
 }) {
   const normalizedAddOnIds = [...new Set(addOnIds)];
   const [service, addOns, business] = await Promise.all([
@@ -651,6 +701,16 @@ async function createBookingRecord({
     };
   }
 
+  const assignmentValidation = await validateAssignedTeamMember({
+    businessId,
+    assignedTeamMemberId: assignedTeamMemberId ?? null,
+    serviceId: service.id
+  });
+
+  if (assignmentValidation.error) {
+    return { error: assignmentValidation.error };
+  }
+
   const customer = await createOrUpdateCustomerForBusiness({
     businessId,
     name,
@@ -665,6 +725,7 @@ async function createBookingRecord({
       businessId,
       customerId: customer.id,
       serviceId: service.id,
+      assignedTeamMemberId: assignmentValidation.teamMemberId,
       scheduledAt,
       endAt,
       notes,
@@ -683,7 +744,7 @@ async function createBookingRecord({
     }
   });
 
-  return { success: true };
+  return { success: true, warning: assignmentValidation.warning };
 }
 
 function validateBookingInput({
@@ -1386,6 +1447,7 @@ export async function createBooking(formData: FormData) {
   const time = getValue(formData, "time");
   const notes = getNormalizedOptionalText(formData, "notes", MAX_NOTES_LENGTH);
   const addOnIds = getSelectedValues(formData, "addOnIds");
+  const assignedTeamMemberId = parseAssignedTeamMemberId(getValue(formData, "assignedTeamMemberId"));
 
   const validationError = validateBookingInput({ serviceId, name, phone, email, date, time });
   if (validationError) {
@@ -1402,7 +1464,8 @@ export async function createBooking(formData: FormData) {
     source,
     date,
     time,
-    notes
+    notes,
+    assignedTeamMemberId
   });
 
   if (result.error) {
@@ -1410,7 +1473,7 @@ export async function createBooking(formData: FormData) {
   }
 
   refreshDashboardRoutes(business.slug);
-  redirectWithSuccess(redirectTarget, "Booking baru berhasil dibuat.");
+  redirectWithSuccess(redirectTarget, result.warning ? `Booking baru berhasil dibuat. Catatan: ${result.warning}` : "Booking baru berhasil dibuat.");
 }
 
 export async function updateBookingStatus(formData: FormData) {
@@ -1425,6 +1488,7 @@ export async function updateBookingStatus(formData: FormData) {
   const followUpStatus = parseFollowUpStatus(getValue(formData, "followUpStatus"));
   const followUpNote = getNormalizedOptionalText(formData, "followUpNote", MAX_NOTES_LENGTH);
   const followUpNextActionAt = normalizeFollowUpDateTime(getValue(formData, "followUpNextActionAt"));
+  const assignedTeamMemberId = parseAssignedTeamMemberId(getValue(formData, "assignedTeamMemberId"));
 
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId, businessId: business.id },
@@ -1468,6 +1532,16 @@ export async function updateBookingStatus(formData: FormData) {
     );
   }
 
+  const assignmentValidation = await validateAssignedTeamMember({
+    businessId: business.id,
+    assignedTeamMemberId,
+    serviceId: booking.serviceId
+  });
+
+  if (assignmentValidation.error) {
+    redirectWithError(redirectTarget, assignmentValidation.error);
+  }
+
   await prisma.booking.update({
     where: { id: bookingId },
     data: {
@@ -1476,13 +1550,14 @@ export async function updateBookingStatus(formData: FormData) {
       followUpStatus,
       followUpNote,
       followUpNextActionAt,
+      assignedTeamMemberId: assignmentValidation.teamMemberId,
       scheduledAt,
       endAt
     }
   });
 
   refreshDashboardRoutes(booking.business.slug);
-  redirectWithSuccess(redirectTarget, "Booking berhasil diperbarui.");
+  redirectWithSuccess(redirectTarget, assignmentValidation.warning ? `Booking berhasil diperbarui. Catatan: ${assignmentValidation.warning}` : "Booking berhasil diperbarui.");
 }
 
 export async function updateBookingFollowUp(formData: FormData) {
