@@ -1,17 +1,16 @@
 import Link from "next/link";
-import { CalendarClock, Search, Sparkles, Workflow } from "lucide-react";
-import { FollowUpForm } from "@/components/booking/follow-up-form";
+import { CalendarClock, Workflow } from "lucide-react";
+import { FollowUpColumnCard } from "@/components/booking/follow-up-column-card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { FollowUpBadge, StatusBadge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FilterShell } from "@/components/ui/filter-shell";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { getFollowUpBoardData, getOwnerBusiness } from "@/lib/data";
 import { getSingleSearchParam } from "@/lib/search-params";
-import { formatDateTimeLabel } from "@/lib/utils";
 
 export default async function FollowUpsPage({
   searchParams
@@ -87,32 +86,25 @@ export default async function FollowUpsPage({
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-                <Search className="h-3.5 w-3.5" />
-                Filter board
-              </div>
-              <p className="mt-3 text-lg font-semibold">Cari card yang relevan</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Saring berdasarkan customer, WhatsApp, atau layanan untuk review follow up yang lebih fokus.</p>
+        <FilterShell
+          title="Cari card yang relevan"
+          description="Saring berdasarkan customer, WhatsApp, atau layanan untuk review follow up yang lebih fokus."
+        >
+          <form className="grid gap-3 lg:min-w-[520px] lg:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
+            <div className="form-field">
+              <span className="form-label">Keyword</span>
+              <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / WhatsApp" />
             </div>
-            <form className="grid gap-3 lg:min-w-[520px] lg:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
-              <div className="form-field">
-                <span className="form-label">Keyword</span>
-                <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / WhatsApp" />
-              </div>
-              <div className="form-field">
-                <span className="form-label">Mode</span>
-                <Select name="focus" defaultValue={focus || "active"}>
-                  <option value="active">Pipeline aktif</option>
-                  <option value="closing">Closing view</option>
-                </Select>
-              </div>
-              <button type="submit" className={buttonVariants("secondary", "lg:mb-0.5")}>Terapkan</button>
-            </form>
-          </div>
-        </Card>
+            <div className="form-field">
+              <span className="form-label">Mode</span>
+              <Select name="focus" defaultValue={focus || "active"}>
+                <option value="active">Pipeline aktif</option>
+                <option value="closing">Closing view</option>
+              </Select>
+            </div>
+            <button type="submit" className={buttonVariants("secondary", "lg:mb-0.5")}>Terapkan</button>
+          </form>
+        </FilterShell>
 
         {totalItems === 0 ? (
           <EmptyState
@@ -123,55 +115,11 @@ export default async function FollowUpsPage({
         ) : (
           <div className="grid gap-4 2xl:grid-cols-5">
             {columns.map((column) => (
-              <Card key={column.id} className="flex flex-col p-4">
-                <div className="rounded-[22px] bg-white/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{column.label}</p>
-                      <p className="mt-1 text-sm text-[var(--muted)]">{column.description}</p>
-                    </div>
-                    <span className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--muted)]">
-                      {column.items.length}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 space-y-4">
-                  {column.items.length === 0 ? (
-                    <div className="rounded-[22px] border border-dashed border-[var(--border)] bg-white/50 p-4 text-sm text-[var(--muted)]">
-                      Belum ada card di tahap ini.
-                    </div>
-                  ) : (
-                    column.items.map((booking) => (
-                      <div key={booking.id} className="surface-card rounded-[24px] p-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">{booking.customerName}</p>
-                          <StatusBadge status={booking.status} />
-                        </div>
-                        <p className="mt-2 text-sm text-[var(--muted)]">{booking.serviceName}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <FollowUpBadge status={booking.followUpStatus ?? "none"} />
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-slate-600">
-                            {booking.date} • {booking.time}
-                          </span>
-                        </div>
-                        <div className="mt-4 rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 p-3 text-sm text-[var(--muted)]">
-                          <p>Next action: {formatDateTimeLabel(booking.followUpNextActionAt)}</p>
-                          <p className="mt-1">{booking.followUpNote || "Belum ada catatan follow up."}</p>
-                        </div>
-                        <div className="mt-4">
-                          <FollowUpForm booking={booking} redirectTo={`/follow-ups${q || focus ? `?${new URLSearchParams({ ...(q ? { q } : {}), ...(focus ? { focus } : {}) }).toString()}` : ""}`} compact submitLabel="Update card" />
-                        </div>
-                        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-                          <span className="text-[var(--muted)]">{booking.phone}</span>
-                          <Link href={`/bookings/${booking.id}`} className="font-semibold text-[var(--primary)]">
-                            Detail booking
-                          </Link>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </Card>
+              <FollowUpColumnCard
+                key={column.id}
+                column={column}
+                redirectTo={`/follow-ups${q || focus ? `?${new URLSearchParams({ ...(q ? { q } : {}), ...(focus ? { focus } : {}) }).toString()}` : ""}`}
+              />
             ))}
           </div>
         )}
