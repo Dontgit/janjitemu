@@ -18,21 +18,44 @@ import { logoutOwner } from "@/lib/actions";
 import { getOptionalSessionUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { href: "/dashboard", label: "Dashboard", icon: ChartColumn },
-  { href: "/analytics", label: "Analytics", icon: LineChart },
-  { href: "/bookings", label: "Bookings", icon: CalendarRange },
-  { href: "/follow-ups", label: "Follow-up", icon: KanbanSquare },
-  { href: "/reminders", label: "Reminder", icon: BellRing },
-  { href: "/services", label: "Layanan", icon: Sparkles },
-  { href: "/customers", label: "Customer", icon: Users },
-  { href: "/team", label: "Team", icon: BriefcaseBusiness },
-  { href: "/team/capacity", label: "Kapasitas staff", icon: CalendarClock },
-  { href: "/team/schedule", label: "Jadwal staff", icon: CalendarClock },
-  { href: "/team/blocked-dates", label: "Blocked dates", icon: CalendarClock },
-  { href: "/schedule", label: "Jadwal", icon: CalendarDays },
-  { href: "/settings", label: "Pengaturan", icon: Settings }
-];
+const linkGroups = [
+  {
+    label: "Ringkasan",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: ChartColumn },
+      { href: "/analytics", label: "Analytics", icon: LineChart }
+    ]
+  },
+  {
+    label: "Operasional",
+    items: [
+      { href: "/bookings", label: "Bookings", icon: CalendarRange },
+      { href: "/follow-ups", label: "Follow-up", icon: KanbanSquare },
+      { href: "/reminders", label: "Reminder", icon: BellRing },
+      { href: "/schedule", label: "Jadwal", icon: CalendarDays }
+    ]
+  },
+  {
+    label: "Katalog & relasi",
+    items: [
+      { href: "/services", label: "Layanan", icon: Sparkles },
+      { href: "/customers", label: "Customer", icon: Users }
+    ]
+  },
+  {
+    label: "Tim",
+    items: [
+      { href: "/team", label: "Team", icon: BriefcaseBusiness },
+      { href: "/team/capacity", label: "Kapasitas staff", icon: CalendarClock },
+      { href: "/team/schedule", label: "Jadwal staff", icon: CalendarClock },
+      { href: "/team/blocked-dates", label: "Blocked dates", icon: CalendarClock }
+    ]
+  },
+  {
+    label: "Workspace",
+    items: [{ href: "/settings", label: "Pengaturan", icon: Settings }]
+  }
+] as const;
 
 export async function DashboardShell({
   children,
@@ -66,28 +89,39 @@ export async function DashboardShell({
             Navigasi cepat
           </div>
 
-          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:grid xl:gap-2 xl:overflow-visible xl:px-0 xl:pb-0">
-            {links.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "group flex min-w-fit items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition xl:min-w-0",
-                  activePath === href
-                    ? "bg-[var(--primary)] text-white shadow-[0_10px_25px_rgba(15,118,110,0.2)]"
-                    : "bg-white/70 text-[var(--muted)] hover:bg-white hover:text-[var(--foreground)]"
-                )}
-              >
-                <span className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl border transition",
-                  activePath === href
-                    ? "border-white/15 bg-white/10 text-white"
-                    : "border-[var(--border)] bg-white text-[var(--primary)] group-hover:border-teal-100 group-hover:bg-teal-50"
-                )}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span>{label}</span>
-              </Link>
+          <nav className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 xl:mx-0 xl:block xl:overflow-visible xl:px-0 xl:pb-0">
+            {linkGroups.map((group) => (
+              <div key={group.label} className="min-w-fit xl:min-w-0 xl:pb-4 xl:last:pb-0">
+                <div className="mb-2 hidden px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:block">
+                  {group.label}
+                </div>
+                <div className="flex gap-2 xl:grid xl:gap-2">
+                  {group.items.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "group flex min-w-fit items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition xl:min-w-0",
+                        activePath === href
+                          ? "bg-[var(--primary)] text-white shadow-[0_10px_25px_rgba(15,118,110,0.2)]"
+                          : "bg-white/70 text-[var(--muted)] hover:bg-white hover:text-[var(--foreground)]"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-xl border transition",
+                          activePath === href
+                            ? "border-white/15 bg-white/10 text-white"
+                            : "border-[var(--border)] bg-white text-[var(--primary)] group-hover:border-teal-100 group-hover:bg-teal-50"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
 

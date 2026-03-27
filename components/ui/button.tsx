@@ -10,7 +10,7 @@ export function buttonVariants(
   className?: string
 ) {
   return cn(
-    "inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:pointer-events-none disabled:opacity-60 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-100",
+    "focus-ring inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:pointer-events-none disabled:opacity-60 hover:-translate-y-0.5 focus-visible:outline-none",
     variant === "primary" &&
       "bg-[var(--primary)] text-white shadow-[0_14px_32px_rgba(15,118,110,0.22)] hover:bg-[var(--primary-strong)]",
     variant === "secondary" &&

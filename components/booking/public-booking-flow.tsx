@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarClock, CheckCircle2, CircleCheckBig, Clock3, MessageCircleMore, ShieldCheck, Store, Sparkles } from "lucide-react";
+import { ArrowRight, Clock3, Sparkles } from "lucide-react";
 import { createPublicBooking } from "@/lib/actions";
-import { Card } from "@/components/ui/card";
+import { BookingFlowStepCard } from "@/components/booking/booking-flow-step-card";
+import { BookingSummaryCard } from "@/components/booking/booking-summary-card";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AvailabilityDay, BusinessProfile, PublicBookingFormValues, Service } from "@/lib/types";
@@ -174,34 +176,23 @@ export function PublicBookingFlow({
           {STEPS.map((item) => {
             const active = item.id === step;
             const passed = item.id < step;
+            const enabled = item.id === 1 || (item.id === 2 && stepOneReady) || (item.id === 3 && stepOneReady && stepTwoReady);
+
             return (
-              <button
+              <BookingFlowStepCard
                 key={item.id}
-                type="button"
+                id={item.id}
+                title={item.title}
+                detail={item.detail}
+                active={active}
+                passed={passed}
+                disabled={!enabled}
                 onClick={() => {
-                  if (item.id === 1 || (item.id === 2 && stepOneReady) || (item.id === 3 && stepOneReady && stepTwoReady)) {
+                  if (enabled) {
                     setStep(item.id);
                   }
                 }}
-                className={`rounded-[22px] border px-4 py-4 text-left transition ${
-                  active
-                    ? "border-teal-500 bg-teal-50"
-                    : passed
-                      ? "border-emerald-200 bg-emerald-50"
-                      : "border-[var(--border)] bg-white"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${passed ? "bg-emerald-600 text-white" : active ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-600"}`}>
-                    {passed ? <CheckCircle2 className="h-4 w-4" /> : item.id}
-                  </span>
-                  <div>
-                    <p className="font-semibold">Step {item.id}</p>
-                    <p className="text-sm text-[var(--muted)]">{item.title}</p>
-                  </div>
-                </div>
-                <p className="mt-3 text-sm text-[var(--muted)]">{item.detail}</p>
-              </button>
+              />
             );
           })}
         </div>
@@ -545,100 +536,18 @@ export function PublicBookingFlow({
         </form>
       </Card>
 
-      <div className="space-y-6 xl:sticky xl:top-24">
-        <Card data-tutorial="public-booking-summary" className="overflow-hidden p-0">
-          <div className="border-b border-teal-100 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.18),transparent_45%),linear-gradient(135deg,#f0fdfa,#ffffff_52%,#ecfeff)] px-6 py-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">Ringkasan booking</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <div className="rounded-[22px] bg-slate-900 px-4 py-4 text-white shadow-[0_18px_34px_rgba(15,23,42,0.18)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/55">Estimasi selesai</p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight">{estimatedEndTime ?? "--:--"}</p>
-                <p className="mt-1 text-sm text-white/70">{selectedTime ? `${selectedTime} mulai` : "Pilih slot dulu"}</p>
-              </div>
-              <div className="rounded-[22px] border border-teal-200 bg-white/90 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-teal-700">Estimasi total</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{formatCurrency(totalPrice)}</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">{formatDurationLabel(totalDuration)}</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="mt-5 space-y-3">
-              <div className="surface-card rounded-[20px] p-4">
-                <p className="text-sm text-[var(--muted)]">Layanan</p>
-                <p className="font-semibold">{selectedService?.name ?? "Belum dipilih"}</p>
-              </div>
-              <div className="surface-card rounded-[20px] p-4">
-                <p className="text-sm text-[var(--muted)]">Add-on</p>
-                <p className="font-semibold">{selectedAddOns.length > 0 ? selectedAddOns.map((item) => item.name).join(", ") : "Tidak ada"}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="surface-card rounded-[20px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Tanggal</p>
-                  <p className="font-semibold">{selectedDate ? formatLongDate(selectedDate) : "Belum dipilih"}</p>
-                </div>
-                <div className="surface-card rounded-[20px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Jam</p>
-                  <p className="font-semibold">{selectedTime || "Belum dipilih"}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="surface-card rounded-[20px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Total durasi</p>
-                  <p className="font-semibold">{totalDuration ? formatDurationLabel(totalDuration) : "-"}</p>
-                </div>
-                <div className="surface-card rounded-[20px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Estimasi biaya</p>
-                  <p className="font-semibold">{totalPrice ? formatCurrency(totalPrice) : "-"}</p>
-                </div>
-              </div>
-              <div className="surface-card rounded-[20px] p-4">
-                <p className="text-sm text-[var(--muted)]">Estimasi selesai</p>
-                <p className="font-semibold">{estimatedEndTime ?? "Pilih tanggal dan jam dulu"}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  {business.bookingBufferMins
-                    ? `Bisnis memberi buffer ${business.bookingBufferMins} menit antar booking.`
-                    : "Tidak ada buffer tambahan antar booking."}
-                </p>
-              </div>
-              <div className="surface-card rounded-[20px] p-4">
-                <p className="text-sm text-[var(--muted)]">Nama customer</p>
-                <p className="font-semibold">{customerName || "Belum diisi"}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <p className="font-semibold">Info cepat untuk customer</p>
-          <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
-            {[
-              { icon: Store, label: business.category || "Bisnis jasa" },
-              {
-                icon: CalendarClock,
-                label: `${business.reminderChannel || "Reminder dashboard"} • interval ${business.bookingSlotInterval ?? 15} menit${business.bookingBufferMins ? ` • buffer ${business.bookingBufferMins} menit` : ""}`
-              },
-              { icon: MessageCircleMore, label: business.phone || "Kontak bisnis akan tampil setelah setup selesai" },
-              { icon: CircleCheckBig, label: "Status awal booking: pending confirmation" },
-              { icon: ShieldCheck, label: "Add-on yang tampil sudah disaring sesuai layanan utama" }
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="surface-card flex items-center gap-3 rounded-[20px] px-4 py-3">
-                <span className="icon-chip h-10 w-10 rounded-[14px]">
-                  <Icon className="h-4 w-4 text-[var(--primary)]" />
-                </span>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <p className="font-semibold">Kenapa flow ini lebih enak dipakai</p>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--muted)]">
-            {guidance.map((item) => <li key={item}>• {item}</li>)}
-          </ul>
-        </Card>
-      </div>
+      <BookingSummaryCard
+        selectedServiceName={selectedService?.name}
+        selectedAddOnNames={selectedAddOns.map((item) => item.name)}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        totalDuration={totalDuration}
+        totalPrice={totalPrice}
+        estimatedEndTime={estimatedEndTime}
+        customerName={customerName}
+        business={business}
+        guidance={guidance}
+      />
 
     </div>
   );
