@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Settings2, ShieldCheck, Sparkles } from "lucide-react";
+import { Settings2, ShieldCheck } from "lucide-react";
 import { saveBusinessProfile } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -34,68 +34,69 @@ export default async function SettingsPage({
         pageTitle="Pengaturan"
         steps={[
           {
-            title: "Selesaikan setup profil bisnis lebih dulu",
-            description: "Bagian ini mengatur identitas bisnis, slug booking publik, kontak, interval slot, dan buffer. Semua ini langsung memengaruhi pengalaman customer di halaman booking.",
+            title: "Selesaikan profil bisnis lebih dulu",
+            description: "Bagian identitas bisnis sekarang dibuat lebih fokus supaya perubahan penting seperti slug, kontak, interval slot, dan buffer lebih cepat dibaca.",
             tip: "Perubahan slug akan mengubah link publik, jadi cek sebelum dibagikan.",
             targetSelector: '[data-tutorial="settings-profile"]',
             targetLabel: "Profil bisnis"
           },
           {
-            title: "Atur jam operasional secara teliti",
-            description: "Di sini Anda menentukan hari aktif, jam buka-tutup, dan ritme availability publik supaya slot yang tampil ke customer tetap realistis.",
-            tip: "Kalau jadwal terasa terlalu rapat, naikkan interval atau buffer.",
-            targetSelector: '[data-tutorial="settings-hours"]',
+            title: "Atur jam operasional dengan ritme yang realistis",
+            description: "Jam operasional tetap jadi bagian penting, tapi layout dibuat lebih ringan supaya tidak terasa berat di mobile.",
+            tip: "Kalau jadwal terasa terlalu rapat, naikkan interval atau buffer."
+,            targetSelector: '[data-tutorial="settings-hours"]',
             targetLabel: "Jam operasional"
           },
           {
-            title: "Gunakan halaman ini untuk go-live",
-            description: "Panel samping dan action bar dipakai untuk final check sebelum go-live: preview halaman publik, cek checklist, lalu reset panduan kalau onboarding ingin diulang.",
+            title: "Gunakan panel samping untuk final check",
+            description: "Area kanan sekarang diposisikan sebagai ringkasan go-live, bukan beban visual tambahan yang terlalu besar.",
             tip: "Sesudah update penting, buka preview booking page untuk QA cepat.",
             targetSelector: '[data-tutorial="settings-go-live"]',
             targetLabel: "Go-live actions"
           }
         ]}
       />
-      <div className="space-y-6 xl:space-y-7">
+
+      <div className="space-y-5 xl:space-y-6">
         <FeedbackBanner feedback={feedback} />
 
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <Settings2 className="h-4 w-4" />
-                Business control
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Business settings"
-                title="Atur profil bisnis dan link booking"
-                description="Halaman ini menggabungkan profil bisnis, kontak, reminder, dan jam operasional agar owner tidak perlu bolak-balik antar layar saat setup awal."
-              />
-            </div>
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <p className="text-sm uppercase tracking-[0.18em] text-white/60">Public booking</p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight">Link siap dibagikan</p>
-              <div className="mt-6 rounded-[24px] border border-white/10 bg-white/10 p-4 text-sm leading-6 text-white/80 backdrop-blur-sm">
-                temujanji.app/book/{businessProfile.slug ?? "temujanji-studio"}
+        <Card className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <Settings2 className="h-4 w-4" />
+                  Business control
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Business settings"
+                  title="Atur profil bisnis dan link booking"
+                  description="Gabungkan profil bisnis, kontak, reminder, dan jam operasional dalam satu halaman yang lebih ringan dan mudah dipakai."
+                />
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="soft-stat-strong rounded-[22px] p-4">
-                  <p className="text-sm text-white/60">Kategori</p>
-                  <p className="mt-2 font-semibold text-white">{businessProfile.category}</p>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[520px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-1">
+                  <p className="text-sm text-[var(--muted)]">Link publik</p>
+                  <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">temujanji.app/book/{businessProfile.slug ?? "temujanji-studio"}</p>
                 </div>
-                <div className="soft-stat-strong rounded-[22px] p-4">
-                  <p className="text-sm text-white/60">Kota</p>
-                  <p className="mt-2 font-semibold text-white">{businessProfile.city}</p>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Kategori</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{businessProfile.category}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Kota</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{businessProfile.city}</p>
                 </div>
               </div>
             </div>
           </div>
         </Card>
 
-        <div className="grid gap-6 2xl:grid-cols-[1.08fr_0.92fr]">
-          <Card className="p-6 sm:p-8 xl:p-10">
-            <form action={saveBusinessProfile} className="space-y-8">
+        <div className="grid gap-5 2xl:grid-cols-[1.04fr_0.96fr]">
+          <Card className="p-5 sm:p-6 xl:p-8">
+            <form action={saveBusinessProfile} className="space-y-6">
               <input type="hidden" name="redirectTo" value="/settings" />
 
               <div data-tutorial="settings-profile">
@@ -168,8 +169,8 @@ export default async function SettingsPage({
             </form>
           </Card>
 
-          <div className="space-y-6">
-            <Card className="p-6">
+          <div className="space-y-5">
+            <Card className="p-5 sm:p-6">
               <div className="flex items-start gap-4">
                 <span className="icon-chip">
                   <ShieldCheck className="h-5 w-5" />
@@ -187,7 +188,7 @@ export default async function SettingsPage({
               </ul>
             </Card>
 
-            <Card className="p-6">
+            <Card className="p-5 sm:p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Working summary</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="soft-stat rounded-[22px] p-4">

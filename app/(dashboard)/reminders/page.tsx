@@ -31,54 +31,46 @@ export default async function ReminderCenterPage({
 
   return (
     <DashboardShell activePath="/reminders" bookingLink={business.bookingLink}>
-      <div className="space-y-6 xl:space-y-7">
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <div>
-              <span className="section-label">
-                <BellRing className="h-4 w-4" />
-                Reminder center
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Reminders"
-                title="Pantau next action dan booking terdekat"
-                description="Reminder center menggabungkan next action follow up dan booking yang sudah dekat waktunya supaya owner punya satu inbox operasional yang lebih mudah diprioritaskan."
-                actions={
-                  <>
-                    <Link href="/follow-ups" className={buttonVariants("secondary")}>Follow-up board</Link>
-                    <Link href="/bookings" className={buttonVariants("secondary")}>Semua bookings</Link>
-                  </>
-                }
-              />
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Total reminder</p>
-                  <p className="mt-2 text-2xl font-semibold">{reminders.length}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Prioritas tinggi</p>
-                  <p className="mt-2 text-2xl font-semibold">{highPriority}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Follow up aktif</p>
-                  <p className="mt-2 text-2xl font-semibold">{followUpCount}</p>
-                </div>
+      <div className="space-y-5 xl:space-y-6">
+        <Card className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <BellRing className="h-4 w-4" />
+                  Reminder center
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Reminders"
+                  title="Pantau next action dan booking terdekat"
+                  description="Reminder center dibuat lebih ringkas agar owner punya satu inbox operasional yang mudah diprioritaskan tanpa panel yang terlalu berat."
+                  actions={
+                    <>
+                      <Link href="/follow-ups" className={buttonVariants("secondary")}>
+                        Follow-up board
+                      </Link>
+                      <Link href="/bookings" className={buttonVariants("secondary")}>
+                        Semua bookings
+                      </Link>
+                    </>
+                  }
+                />
               </div>
-            </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <p className="text-sm uppercase tracking-[0.18em] text-white/60">Komposisi reminder</p>
-              <div className="mt-6 space-y-3">
-                <div className="rounded-[22px] border border-white/10 bg-white/10 p-4">
-                  <p className="text-sm text-white/60">Booking terdekat</p>
-                  <p className="mt-2 text-2xl font-semibold">{appointmentCount}</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Total reminder</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{reminders.length}</p>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/10 p-4">
-                  <p className="text-sm text-white/60">Next action follow up</p>
-                  <p className="mt-2 text-2xl font-semibold">{followUpCount}</p>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Prioritas tinggi</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{highPriority}</p>
                 </div>
-                <p className="text-sm leading-7 text-white/74">Prioritaskan item merah lebih dulu, lalu booking mendekat yang masih pending.</p>
+                <div className="surface-card rounded-[22px] p-4 sm:col-span-1 col-span-2">
+                  <p className="text-sm text-[var(--muted)]">Booking terdekat</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{appointmentCount}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -88,7 +80,7 @@ export default async function ReminderCenterPage({
           title="Fokuskan inbox operasional"
           description="Saring berdasarkan keyword, prioritas, atau jenis reminder untuk sesi review yang lebih cepat."
         >
-          <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto] xl:items-end" method="get">
+          <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]" method="get">
             <div className="form-field">
               <span className="form-label">Keyword</span>
               <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / judul reminder" />
@@ -110,7 +102,7 @@ export default async function ReminderCenterPage({
                 <option value="appointment">Booking terdekat</option>
               </Select>
             </div>
-            <button type="submit" className={buttonVariants("secondary", "lg:mb-0.5")}>Terapkan</button>
+            <button type="submit" className={buttonVariants("secondary", "w-full md:col-span-2 xl:w-fit")}>Terapkan</button>
           </form>
         </FilterShell>
 
