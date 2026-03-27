@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { CalendarRange, Filter, PencilLine, Plus, Trash2 } from "lucide-react";
-import { createBooking, deleteBooking, updateBookingStatus } from "@/lib/actions";
+import { CalendarRange, Plus } from "lucide-react";
+import { createBooking } from "@/lib/actions";
+import { BookingCard } from "@/components/bookings/booking-card";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { StatusBadge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { FilterShell } from "@/components/ui/filter-shell";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
@@ -15,7 +16,6 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { getAssignableTeamMembers, getBookingSummary, getOwnerBusiness, getPaginatedBookings, getServices } from "@/lib/data";
-import { formatDateTimeLabel } from "@/lib/utils";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { buildSearchPath, getSingleSearchParam, parsePaginationParams, replaceSearchParams } from "@/lib/search-params";
 
@@ -115,16 +115,14 @@ export default async function BookingsPage({
           </div>
         </Card>
 
-        <Card data-tutorial="bookings-filter" className="p-6 xl:p-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-                <Filter className="h-3.5 w-3.5" />
-                Filter
-              </div>
-              <p className="mt-3 text-lg font-semibold">Cari & filter booking</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Filter berdasarkan customer, nomor WhatsApp, layanan, status booking, atau status follow up.</p>
-            </div>
+        <div data-tutorial="bookings-filter">
+          <FilterShell
+            title="Cari & filter booking"
+            description="Filter berdasarkan customer, nomor WhatsApp, layanan, status booking, atau status follow up."
+            footer={
+              <>Menampilkan {paginatedBookings.items.length} dari {paginatedBookings.total} booking.</>
+            }
+          >
             <form className="grid gap-3 lg:min-w-[860px] lg:grid-cols-[minmax(0,1fr)_170px_190px_220px_auto]" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={paginatedBookings.perPage} />
@@ -169,11 +167,8 @@ export default async function BookingsPage({
               </div>
               <SubmitButton variant="secondary" className="lg:mb-0.5 lg:w-fit">Terapkan</SubmitButton>
             </form>
-          </div>
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            Menampilkan {paginatedBookings.items.length} dari {paginatedBookings.total} booking.
-          </p>
-        </Card>
+          </FilterShell>
+        </div>
 
         <Card data-tutorial="bookings-create" className="p-6 xl:p-7">
           <div className="flex items-center gap-3">
@@ -277,148 +272,12 @@ export default async function BookingsPage({
         ) : (
           <div className="grid gap-4">
             {paginatedBookings.items.map((booking) => (
-              <Card
+              <BookingCard
                 key={booking.id}
-                className="p-5"
-              >
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="min-w-0 space-y-4 xl:max-w-xl">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-lg font-semibold">{booking.customerName}</p>
-                      <StatusBadge status={booking.status} />
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-slate-600">
-                        {booking.id}
-                      </span>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <div className="surface-card rounded-[20px] px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Layanan</p>
-                        <p className="mt-1 text-sm font-medium">{booking.serviceName}</p>
-                      </div>
-                      <div className="surface-card rounded-[20px] px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Jadwal</p>
-                        <p className="mt-1 text-sm font-medium">{booking.date} • {booking.time}</p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">{booking.endTime ? `Selesai estimasi ${booking.endTime}` : "Estimasi selesai belum tersedia"}</p>
-                      </div>
-                      <div className="surface-card rounded-[20px] px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Staff</p>
-                        <p className="mt-1 break-words text-sm font-medium">{booking.assignedStaffName ?? "Belum di-assign"}</p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">{booking.assignedStaffName ? booking.assignedStaffServiceFit === false ? "Di luar service fit staff ini" : booking.assignedStaffActive === false ? "Staff sedang nonaktif" : "Siap dipakai untuk operasional" : "Pilih staff dari panel update booking"}</p>
-                      </div>
-                      <div className="surface-card rounded-[20px] px-4 py-3 sm:col-span-2 lg:col-span-1">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Kontak</p>
-                        <p className="mt-1 break-words text-sm font-medium">{booking.phone}{booking.email ? ` • ${booking.email}` : ""}</p>
-                      </div>
-                    </div>
-
-                    {booking.addOns && booking.addOns.length > 0 ? (
-                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Add-on</p>
-                        <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">{booking.addOns.map((item) => item.name).join(', ')}</p>
-                      </div>
-                    ) : null}
-
-                    {booking.notes ? (
-                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">Catatan</p>
-                        <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">{booking.notes}</p>
-                      </div>
-                    ) : null}
-
-                    <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-white/70 px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">After-sales / follow up</p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">Status: {booking.followUpStatus ?? 'none'}</p>
-                      {booking.followUpNote ? <p className="mt-1 text-sm leading-6 text-[var(--foreground)]">{booking.followUpNote}</p> : null}
-                      <p className="mt-1 text-sm text-[var(--muted)]">Next action: {formatDateTimeLabel(booking.followUpNextActionAt)}</p>
-                    </div>
-                    <Link href={`/bookings/${booking.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)]">
-                      Lihat detail booking
-                    </Link>
-                  </div>
-
-                  <div className="grid gap-3 xl:min-w-[360px] xl:max-w-[380px] xl:flex-1">
-                    <form action={updateBookingStatus} className="surface-card grid gap-3 rounded-[24px] p-4">
-                      <input type="hidden" name="redirectTo" value={currentPath} />
-                      <input type="hidden" name="bookingId" value={booking.id} />
-                      <div className="flex items-center gap-2">
-                        <span className="icon-chip h-10 w-10 rounded-[14px]">
-                          <PencilLine className="h-4 w-4" />
-                        </span>
-                        <div>
-                          <p className="text-sm font-semibold">Update booking</p>
-                          <p className="text-xs text-[var(--muted)]">Status, tanggal, jam, dan catatan</p>
-                        </div>
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Status</span>
-                        <Select name="status" defaultValue={booking.status}>
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="rescheduled">Rescheduled</option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="no-show">No-show</option>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="form-field">
-                          <span className="form-label">Tanggal</span>
-                          <Input name="date" type="date" defaultValue={booking.date} />
-                        </div>
-                        <div className="form-field">
-                          <span className="form-label">Jam</span>
-                          <Input name="time" type="time" defaultValue={booking.time} />
-                        </div>
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Assign staff</span>
-                        <Select name="assignedTeamMemberId" defaultValue={booking.assignedTeamMemberId ?? "unassigned"}>
-                          <option value="unassigned">Belum di-assign</option>
-                          {assignableTeamMembers.map((member) => (
-                            <option key={member.id} value={member.id}>
-                              {member.name} • {member.roleLabel}{member.serviceFit ? "" : " • di luar service fit"}{typeof member.dailyLoad === "number" ? ` • ${member.dailyLoad} booking hari itu` : ""}
-                            </option>
-                          ))}
-                        </Select>
-                        <p className="mt-2 text-xs text-[var(--muted)]">Hint kapasitas harian dihitung dari jumlah booking staff di tanggal yang sama. Saat disimpan, assignment tetap diblok bila staff bentrok, di luar weekly availability, atau sedang diblok manual.</p>
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Catatan</span>
-                        <Textarea name="notes" rows={2} defaultValue={booking.notes} />
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Follow up status</span>
-                        <Select name="followUpStatus" defaultValue={booking.followUpStatus ?? 'none'}>
-                          <option value="none">Belum perlu follow up</option>
-                          <option value="needs-follow-up">Perlu follow up</option>
-                          <option value="contacted">Sudah dihubungi</option>
-                          <option value="offer-sent">Penawaran dikirim</option>
-                          <option value="won">Deal / berhasil</option>
-                          <option value="lost">Belum berhasil</option>
-                        </Select>
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Follow up note</span>
-                        <Textarea name="followUpNote" rows={2} defaultValue={booking.followUpNote ?? ''} />
-                      </div>
-                      <div className="form-field">
-                        <span className="form-label">Next action</span>
-                        <Input name="followUpNextActionAt" type="datetime-local" defaultValue={booking.followUpNextActionAt ? booking.followUpNextActionAt.slice(0, 16) : ''} />
-                      </div>
-                      <SubmitButton variant="secondary">Simpan perubahan</SubmitButton>
-                    </form>
-                    <form action={deleteBooking}>
-                      <input type="hidden" name="redirectTo" value={currentPath} />
-                      <input type="hidden" name="bookingId" value={booking.id} />
-                      <SubmitButton variant="ghost" className="w-full justify-center gap-2">
-                        <Trash2 className="h-4 w-4" />
-                        Hapus booking
-                      </SubmitButton>
-                    </form>
-                  </div>
-                </div>
-              </Card>
+                booking={booking}
+                currentPath={currentPath}
+                assignableTeamMembers={assignableTeamMembers}
+              />
             ))}
           </div>
         )}
