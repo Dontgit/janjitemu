@@ -77,7 +77,7 @@ export default async function AnalyticsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[380px] xl:max-w-[520px] xl:flex-1">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:min-w-[380px] xl:max-w-[520px] xl:flex-1">
                 {analytics.summary.map((item) => (
                   <div key={item.label} className="surface-card rounded-[22px] p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.08fr_0.92fr]">
+            <div className="grid gap-4 xl:grid-cols-[1.04fr_0.96fr]">
               <div className="surface-card rounded-[24px] p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -106,7 +106,7 @@ export default async function AnalyticsPage() {
                   </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                   <div className="rounded-[20px] bg-white px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
                     <p className="text-[var(--muted)]">Revenue forecast</p>
                     <p className="mt-2 text-xl font-semibold">{formatCurrency(analytics.nextSevenDays.totalRevenue)}</p>
@@ -159,7 +159,7 @@ export default async function AnalyticsPage() {
                   Funnel
                 </span>
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {analytics.statusBreakdown.map((item) => (
                   <div key={item.status} className="surface-card rounded-[22px] p-4">
                     <div className="flex items-center justify-between gap-3">

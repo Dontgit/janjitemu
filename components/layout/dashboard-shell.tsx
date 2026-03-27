@@ -91,9 +91,12 @@ export async function DashboardShell({
             </div>
           </div>
 
-          <div className="mb-3 mt-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:hidden">
-            <PanelLeft className="h-4 w-4" />
-            Navigasi cepat
+          <div className="mb-3 mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-white/70 bg-white/75 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] xl:hidden">
+            <span className="inline-flex items-center gap-2">
+              <PanelLeft className="h-4 w-4" />
+              Navigasi cepat
+            </span>
+            <span className="text-[10px] tracking-[0.14em] text-[var(--muted-soft)]">geser menu</span>
           </div>
 
           <nav className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 xl:mx-0 xl:mt-4 xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-y-auto xl:overflow-x-hidden xl:px-0 xl:pb-3">

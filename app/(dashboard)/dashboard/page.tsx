@@ -94,7 +94,7 @@ export default async function DashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
                 <div className="surface-card rounded-[22px] p-4 text-sm">
                   <p className="text-[var(--muted)]">Total booking</p>
                   <p className="mt-2 text-xl font-semibold tracking-tight">{bookingSummary.total}</p>
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
               {stats.map((stat) => (
                 <StatCard key={stat.label} {...stat} />
               ))}
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {quickPanels.map(({ icon: Icon, title, detail }) => (
                 <div key={title} className="surface-card rounded-[22px] p-4">
                   <div className="flex items-start gap-3">
@@ -186,7 +186,7 @@ export default async function DashboardPage() {
               ))}
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {highlights.map((item) => (
                 <div key={item.label} className="rounded-[22px] border border-teal-100/80 bg-teal-50/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                   <p className="text-sm text-[var(--muted)]">{item.label}</p>
