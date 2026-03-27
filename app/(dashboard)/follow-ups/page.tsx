@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, Workflow } from "lucide-react";
+import { Workflow } from "lucide-react";
 import { FollowUpColumnCard } from "@/components/booking/follow-up-column-card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -39,48 +39,46 @@ export default async function FollowUpsPage({
 
   return (
     <DashboardShell activePath="/follow-ups" bookingLink={business.bookingLink}>
-      <div className="space-y-6 xl:space-y-7">
-        <Card className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <div>
-              <span className="section-label">
-                <Workflow className="h-4 w-4" />
-                Follow-up board
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Pipeline"
-                title="Kelola pipeline follow up booking"
-                description="Board ini memakai data follow up yang sama dengan halaman bookings, tetapi dirapikan per tahap supaya owner lebih cepat memindahkan booking dari konfirmasi ke closing."
-                actions={
-                  <>
-                    <Link href="/bookings" className={buttonVariants("secondary")}>Semua bookings</Link>
-                    <Link href="/reminders" className={buttonVariants("secondary")}>Reminder center</Link>
-                  </>
-                }
-              />
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Total card</p>
-                  <p className="mt-2 text-2xl font-semibold">{totalItems}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Perlu aksi hari ini</p>
-                  <p className="mt-2 text-2xl font-semibold">{dueToday}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Mode board</p>
-                  <p className="mt-2 text-2xl font-semibold">{focus === "closing" ? "Closing" : "Aktif"}</p>
-                </div>
+      <div className="space-y-5 xl:space-y-6">
+        <Card className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <Workflow className="h-4 w-4" />
+                  Follow-up board
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Pipeline"
+                  title="Kelola pipeline follow up booking"
+                  description="Board follow up dibuat lebih ringkas supaya owner lebih cepat membaca prioritas harian dan memindahkan booking dari konfirmasi ke closing."
+                  actions={
+                    <>
+                      <Link href="/bookings" className={buttonVariants("secondary")}>
+                        Semua bookings
+                      </Link>
+                      <Link href="/reminders" className={buttonVariants("secondary")}>
+                        Reminder center
+                      </Link>
+                    </>
+                  }
+                />
               </div>
-            </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <p className="text-sm uppercase tracking-[0.18em] text-white/60">Cara pakai</p>
-              <div className="mt-6 space-y-3 text-sm leading-7 text-white/74">
-                <p>Gunakan mode aktif untuk konfirmasi dan nurturing harian.</p>
-                <p>Pindah ke mode closing saat ingin fokus pada penawaran yang sudah dekat keputusan.</p>
-                <p>Setiap kartu bisa diupdate langsung tanpa kembali ke halaman detail.</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Total card</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{totalItems}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Perlu aksi hari ini</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{dueToday}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4 sm:col-span-1 col-span-2">
+                  <p className="text-sm text-[var(--muted)]">Mode board</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{focus === "closing" ? "Closing" : "Aktif"}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -90,7 +88,7 @@ export default async function FollowUpsPage({
           title="Cari card yang relevan"
           description="Saring berdasarkan customer, WhatsApp, atau layanan untuk review follow up yang lebih fokus."
         >
-          <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto] xl:items-end" method="get">
+          <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
             <div className="form-field">
               <span className="form-label">Keyword</span>
               <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / WhatsApp" />
@@ -102,7 +100,7 @@ export default async function FollowUpsPage({
                 <option value="closing">Closing view</option>
               </Select>
             </div>
-            <button type="submit" className={buttonVariants("secondary", "lg:mb-0.5")}>Terapkan</button>
+            <button type="submit" className={buttonVariants("secondary", "w-full md:col-span-2 xl:w-fit")}>Terapkan</button>
           </form>
         </FilterShell>
 
@@ -113,7 +111,7 @@ export default async function FollowUpsPage({
             action={<Link href="/bookings" className={buttonVariants("primary")}>Kelola bookings</Link>}
           />
         ) : (
-          <div className="grid gap-4 2xl:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
             {columns.map((column) => (
               <FollowUpColumnCard
                 key={column.id}

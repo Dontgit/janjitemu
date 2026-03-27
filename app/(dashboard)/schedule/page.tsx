@@ -21,97 +21,83 @@ export default async function SchedulePage() {
         pageTitle="Jadwal"
         steps={[
           {
-            title: "Baca planner mingguan dari atas ke bawah",
-            description: "Panel atas adalah ringkasan minggu berjalan: jumlah hari terisi, total booking, dan snapshot ritme operasional supaya beban kerja cepat terbaca.",
-            tip: "Kalau hari terjadwal mulai padat, cek detail tanggal yang perlu buffer.",
+            title: "Mulai dari ringkasan planner",
+            description: "Planner overview sekarang lebih ringkas agar owner cepat membaca total booking, tanggal terisi, dan ritme operasional minggu ini.",
+            tip: "Kalau hari terjadwal mulai padat, lanjut ke detail tanggal yang paling ramai dulu.",
             targetSelector: '[data-tutorial="schedule-overview"]',
             targetLabel: "Planner overview"
           },
           {
-            title: "Cocokkan jam operasional dengan booking aktif",
-            description: "Kolom ini dipakai untuk memastikan jam buka-tutup sudah sinkron dengan slot publik yang seharusnya tersedia.",
-            tip: "Kalau ada mismatch, perbaiki dari Pengaturan lalu cek lagi di sini.",
-            targetSelector: '[data-tutorial="schedule-hours"]',
+            title: "Cek jam operasional tanpa panel berlebihan",
+            description: "Bagian jam operasional dibuat lebih ringan supaya sinkronisasi dengan slot booking tetap mudah dicek di layar kecil.",
+            tip: "Kalau ada mismatch, perbaiki dari Pengaturan lalu kembali cek di sini."
+,            targetSelector: '[data-tutorial="schedule-hours"]',
             targetLabel: "Jam operasional"
           },
           {
-            title: "Lihat detail per tanggal untuk spotting konflik",
-            description: "Kartu tanggal menampilkan customer, status, jam, dan layanan. Area ini cocok untuk mencari hari penuh atau booking yang butuh perhatian cepat.",
-            tip: "Kalau perlu aksi, lanjut ke halaman Bookings untuk update detailnya.",
+            title: "Lihat detail tanggal sebagai area kerja utama",
+            description: "Daftar tanggal tetap jadi fokus utama supaya spotting konflik dan hari padat lebih cepat dilakukan.",
+            tip: "Kalau perlu aksi, lanjut ke Bookings untuk update detail booking terkait.",
             targetSelector: '[data-tutorial="schedule-days"]',
             targetLabel: "Detail per tanggal"
           }
         ]}
       />
-      <div className="space-y-6 xl:space-y-7">
-        <Card data-tutorial="schedule-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <CalendarDays className="h-4 w-4" />
-                Weekly planner
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Schedule"
-                title="Kalender operasional mingguan"
-                description="Ringkasan booking per tanggal dan jam operasional agar owner cepat melihat slot padat, hari kosong, dan kebutuhan reschedule dengan tampilan yang terasa setara premium di seluruh dashboard."
-                actions={
-                  <>
-                    <Link href="/bookings" className={buttonVariants("secondary")}>Kelola bookings</Link>
-                    <Link href="/reminders" className={buttonVariants("secondary")}>Reminder center</Link>
-                  </>
-                }
-              />
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Tanggal terisi</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.totalDates}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Total booking</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.totalBookings}</p>
-                </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Layanan aktif</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.activeServices}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.18em] text-white/60">Jadwal minggu ini</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight">{dates.length} hari terjadwal</p>
-                </div>
-                <span className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
-                  Planner
+      <div className="space-y-5 xl:space-y-6">
+        <Card data-tutorial="schedule-overview" className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <CalendarDays className="h-4 w-4" />
+                  Weekly planner
                 </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Schedule"
+                  title="Kalender operasional mingguan"
+                  description="Lihat ringkasan booking per tanggal dan jam operasional tanpa layout yang terlalu berat di mobile maupun desktop."
+                  actions={
+                    <>
+                      <Link href="/bookings" className={buttonVariants("secondary")}>
+                        Kelola bookings
+                      </Link>
+                      <Link href="/reminders" className={buttonVariants("secondary")}>
+                        Reminder center
+                      </Link>
+                    </>
+                  }
+                />
               </div>
-              <div className="mt-6 grid gap-3">
-                {hours.slice(0, 4).map((hour) => (
-                  <div key={hour.day} className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium">{hour.day}</p>
-                      <p className="text-sm text-white/72">{hour.active ? `${hour.open} - ${hour.close}` : "Tutup"}</p>
-                    </div>
-                  </div>
-                ))}
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Tanggal terisi</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{stats.totalDates}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Total booking</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{stats.totalBookings}</p>
+                </div>
+                <div className="surface-card rounded-[22px] p-4 sm:col-span-1 col-span-2">
+                  <p className="text-sm text-[var(--muted)]">Layanan aktif</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{stats.activeServices}</p>
+                </div>
               </div>
             </div>
           </div>
         </Card>
 
-        <div className="grid gap-6 2xl:grid-cols-[340px_minmax(0,1fr)]">
-          <Card data-tutorial="schedule-hours" className="p-6">
+        <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <Card data-tutorial="schedule-hours" className="p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <Clock3 className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-lg font-semibold">Jam operasional</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Ringkasan hari aktif dan jam buka untuk memastikan booking publik dan jadwal internal tetap sinkron.</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Ringkasan hari aktif dan jam buka untuk memastikan slot publik dan jadwal internal tetap sinkron.</p>
               </div>
             </div>
             <div className="mt-5 space-y-3">
