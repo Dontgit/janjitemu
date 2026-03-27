@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { Search, UserPlus, Users, Repeat, MessageCircleMore } from "lucide-react";
-import { createCustomer, deleteCustomer, updateCustomer } from "@/lib/actions";
+import { UserPlus, Users } from "lucide-react";
+import { createCustomer } from "@/lib/actions";
+import { CustomerCard } from "@/components/customers/customer-card";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { FilterShell } from "@/components/ui/filter-shell";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
@@ -15,7 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { getOwnerBusiness, getPaginatedCustomers } from "@/lib/data";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { buildSearchPath, getSingleSearchParam, parsePaginationParams, replaceSearchParams } from "@/lib/search-params";
-import { formatDateTimeLabel } from "@/lib/utils";
 
 export default async function CustomersPage({
   searchParams
@@ -106,36 +105,34 @@ export default async function CustomersPage({
         </Card>
 
         <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-          <Card data-tutorial="customers-filter" className="p-6">
-            <div className="flex items-start gap-4">
-              <span className="icon-chip">
-                <Search className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-lg font-semibold">Cari customer</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Filter cepat berdasarkan nama, WhatsApp, email, atau sumber lead untuk follow up yang lebih rapi.</p>
-              </div>
-            </div>
-            <form className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto]" method="get">
-              <input type="hidden" name="page" value="1" />
-              <input type="hidden" name="perPage" value={customers.perPage} />
-              <Input name="q" placeholder="Cari nama / WhatsApp / email" defaultValue={query} />
-              <Input name="source" placeholder="Filter sumber lead" defaultValue={source} />
-              <SubmitButton variant="secondary" className="sm:w-fit">
-                Terapkan
-              </SubmitButton>
-            </form>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="soft-stat rounded-[22px] p-4">
-                <p className="text-sm text-[var(--muted)]">Data tampil</p>
-                <p className="mt-2 text-xl font-semibold">{customers.items.length}</p>
-              </div>
-              <div className="soft-stat rounded-[22px] p-4">
-                <p className="text-sm text-[var(--muted)]">Filter aktif</p>
-                <p className="mt-2 text-xl font-semibold">{query || source ? "Ya" : "Belum ada"}</p>
-              </div>
-            </div>
-          </Card>
+          <div data-tutorial="customers-filter">
+            <FilterShell
+              title="Cari customer"
+              description="Filter cepat berdasarkan nama, WhatsApp, email, atau sumber lead untuk follow up yang lebih rapi."
+              footer={
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="soft-stat rounded-[22px] p-4">
+                    <p className="text-sm text-[var(--muted)]">Data tampil</p>
+                    <p className="mt-2 text-xl font-semibold">{customers.items.length}</p>
+                  </div>
+                  <div className="soft-stat rounded-[22px] p-4">
+                    <p className="text-sm text-[var(--muted)]">Filter aktif</p>
+                    <p className="mt-2 text-xl font-semibold">{query || source ? "Ya" : "Belum ada"}</p>
+                  </div>
+                </div>
+              }
+            >
+              <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto]" method="get">
+                <input type="hidden" name="page" value="1" />
+                <input type="hidden" name="perPage" value={customers.perPage} />
+                <Input name="q" placeholder="Cari nama / WhatsApp / email" defaultValue={query} />
+                <Input name="source" placeholder="Filter sumber lead" defaultValue={source} />
+                <SubmitButton variant="secondary" className="sm:w-fit">
+                  Terapkan
+                </SubmitButton>
+              </form>
+            </FilterShell>
+          </div>
 
           <Card className="p-6 sm:p-7">
             <div className="flex items-start gap-4">
@@ -186,63 +183,7 @@ export default async function CustomersPage({
         ) : (
           <div className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
             {customers.items.map((customer) => (
-              <Card key={customer.id} className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <Link href={`/customers/${customer.id}`} className="text-lg font-semibold tracking-tight transition hover:text-[var(--primary)]">
-                      {customer.name}
-                    </Link>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{customer.phone}</p>
-                  </div>
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-                    {(customer.bookingCount ?? 0) > 1 ? "Repeat" : "Lead"}
-                  </span>
-                </div>
-
-                <form action={updateCustomer} className="mt-5 space-y-4">
-                  <input type="hidden" name="redirectTo" value={currentPath} />
-                  <input type="hidden" name="customerId" value={customer.id} />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Input name="name" defaultValue={customer.name} required />
-                    <Input name="phone" defaultValue={customer.phone} required />
-                    <Input name="email" type="email" defaultValue={customer.email ?? ""} />
-                    <Input name="source" defaultValue={customer.source ?? ""} />
-                  </div>
-                  <Textarea name="notes" rows={3} defaultValue={customer.notes ?? ""} placeholder="Catatan customer" />
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="soft-stat rounded-[22px] p-4 text-sm">
-                      <p className="text-[var(--muted)]">Total booking</p>
-                      <p className="mt-2 text-lg font-semibold">{customer.bookingCount ?? 0}</p>
-                    </div>
-                    <div className="soft-stat rounded-[22px] p-4 text-sm sm:col-span-2">
-                      <p className="text-[var(--muted)]">Booking terakhir</p>
-                      <p className="mt-2 font-semibold">{formatDateTimeLabel(customer.lastBookingAt)}</p>
-                    </div>
-                  </div>
-
-                  <div className="field-card rounded-[24px] p-4 text-sm text-[var(--muted)]">
-                    <div className="flex items-start gap-3">
-                      <MessageCircleMore className="mt-0.5 h-4 w-4 text-[var(--primary)]" />
-                      <p>{customer.notes?.trim() ? customer.notes : "Belum ada catatan internal untuk customer ini."}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={`/customers/${customer.id}`} className={buttonVariants("ghost")}>
-                      Detail CRM
-                    </Link>
-                    <SubmitButton variant="secondary">Update customer</SubmitButton>
-                  </div>
-                </form>
-                <form action={deleteCustomer} className="mt-3">
-                  <input type="hidden" name="redirectTo" value={currentPath} />
-                  <input type="hidden" name="customerId" value={customer.id} />
-                  <SubmitButton variant="ghost" className="w-full" disabled={(customer.bookingCount ?? 0) > 0}>
-                    {(customer.bookingCount ?? 0) > 0 ? "Tidak bisa hapus: sudah punya booking" : "Hapus customer"}
-                  </SubmitButton>
-                </form>
-              </Card>
+              <CustomerCard key={customer.id} customer={customer} currentPath={currentPath} />
             ))}
           </div>
         )}
