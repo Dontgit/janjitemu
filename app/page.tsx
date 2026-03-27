@@ -25,6 +25,21 @@ const features = [
   }
 ];
 
+const journeySteps = [
+  {
+    title: "Setup cepat",
+    description: "Isi profil bisnis, layanan, dan jam operasional inti dalam satu flow onboarding yang ringkas."
+  },
+  {
+    title: "Bagikan link booking",
+    description: "Taruh link di bio Instagram, WhatsApp, atau Google Business Profile supaya customer bisa booking sendiri."
+  },
+  {
+    title: "Kelola operasional harian",
+    description: "Pantau booking, follow-up, dan jadwal staff dari dashboard yang lebih fokus ke action."
+  }
+];
+
 export default async function HomePage() {
   const [dashboardStats, services] = await Promise.all([getDashboardStats(), getServices()]);
 
@@ -46,16 +61,25 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/dashboard" className={buttonVariants("primary", "w-full sm:w-auto") }>
-              Lihat dashboard
+            <Link href="/onboarding" className={buttonVariants("primary", "w-full sm:w-auto")}>
+              Mulai onboarding
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
             <Link
-              href="/onboarding"
+              href="/book/temujanji-studio"
               className={buttonVariants("secondary", "w-full sm:w-auto")}
             >
-              Mulai onboarding
+              Coba booking publik
             </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {journeySteps.map((step, index) => (
+              <div key={step.title} className="surface-subtle rounded-[24px] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">0{index + 1}</p>
+                <p className="mt-2 font-semibold">{step.title}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{step.description}</p>
+              </div>
+            ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {dashboardStats.slice(0, 3).map((stat) => (

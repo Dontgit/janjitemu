@@ -300,13 +300,13 @@ export function PublicBookingFlow({
                 </section>
               ) : null}
 
-              <section className="grid gap-6 2xl:grid-cols-2">
+              <section className="grid gap-6 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-lg font-semibold">Pilih tanggal</h2>
                     <p className="text-sm text-[var(--muted)]">Tanggal libur tetap terlihat, tapi tanpa slot.</p>
                   </div>
-                  <div className="grid gap-3">
+                  <div className="grid gap-3 max-h-[420px] overflow-auto pr-1">
                     {serviceAvailability.map((date) => (
                       <button
                         key={date.value}
@@ -337,7 +337,7 @@ export function PublicBookingFlow({
                     <p className="text-sm text-[var(--muted)]">Ketersediaan sudah mengikuti jam operasional, booking lain, dan interval slot bisnis.</p>
                   </div>
                   {slots.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-3">
                       {slots.map((slot) => (
                         <button
                           key={slot}
