@@ -3,6 +3,7 @@ import { CalendarClock, CalendarRange, Clock3, ShieldBan, Sparkles, Users } from
 import { createTeamMemberBlockedDate, deleteTeamMemberBlockedDate } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
@@ -11,7 +12,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { buttonVariants } from "@/components/ui/button";
 import { getFeedbackFromSearchParams } from "@/lib/feedback";
 import { getBlockedEntryWindowLabel, getOwnerBusiness, getTeamBlockedDatesPageData } from "@/lib/data";
 import { formatLongDate } from "@/lib/utils";
@@ -20,7 +20,11 @@ function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default async function TeamBlockedDatesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function TeamBlockedDatesPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const [business, pageData, resolvedSearchParams] = await Promise.all([getOwnerBusiness(), getTeamBlockedDatesPageData(), searchParams]);
   const feedback = getFeedbackFromSearchParams(resolvedSearchParams);
   const activeMembers = pageData.teamMembers.filter((member) => member.active ?? true);
@@ -33,109 +37,96 @@ export default async function TeamBlockedDatesPage({ searchParams }: { searchPar
         pageTitle="Staff Blocked Dates"
         steps={[
           {
-            title: "Catat blok manual yang memang penting",
-            description: "Halaman ini untuk owner yang butuh override satu kali di luar weekly availability, misalnya cuti, training, atau jam tertentu yang perlu dikosongkan.",
-            tip: "V1 ini cukup untuk blok tanggal atau rentang jam spesifik, belum perlu alur approval atau saldo cuti.",
+            title: "Mulai dari overview blocked dates",
+            description: "Halaman blocked dates sekarang dibuat lebih ringkas agar owner cepat membaca jumlah upcoming entries, staff terdampak, dan full-day block."
+,
+            tip: "Gunakan blocked date untuk override satu kali di luar weekly availability.",
             targetSelector: '[data-tutorial="team-blocked-overview"]',
             targetLabel: "Overview blocked dates"
           },
           {
-            title: "Buat entry tanpa ribet",
-            description: "Pilih staff, tanggal, lalu tentukan apakah full-day atau hanya rentang jam tertentu. Catatan dipakai untuk konteks operasional singkat.",
-            tip: "Gunakan full-day untuk off day total, dan rentang jam untuk training, meeting, atau appointment pribadi.",
+            title: "Tambah block tanpa alur ribet",
+            description: "Form create dibuat lebih fokus untuk kebutuhan operasional harian: pilih staff, tanggal, full-day atau timed block, lalu isi catatan jika perlu."
+,
+            tip: "Pakai full-day untuk off total, dan rentang jam untuk training, meeting, atau agenda pribadi.",
             targetSelector: '[data-tutorial="team-blocked-form"]',
             targetLabel: "Form blocked date"
           },
           {
             title: "Review upcoming block sebelum assign booking",
-            description: "Daftar upcoming entry menampilkan blok yang paling dekat supaya owner cepat cek sebelum menyimpan assignment staff.",
-            tip: "Kalau sudah tidak relevan, hapus entry dari daftar ini agar ranking staff kembali normal.",
+            description: "Daftar upcoming entry tetap jadi area kerja utama supaya owner cepat mengecek konflik sebelum assign staff."
+,
+            tip: "Hapus entry yang sudah tidak relevan agar ranking staff kembali normal.",
             targetSelector: '[data-tutorial="team-blocked-list"]',
             targetLabel: "Upcoming blocked dates"
           }
         ]}
       />
 
-      <div className="space-y-6 xl:space-y-7">
+      <div className="space-y-5 xl:space-y-6">
         <FeedbackBanner feedback={feedback} />
 
-        <Card data-tutorial="team-blocked-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <ShieldBan className="h-4 w-4" />
-                Staff blocked dates
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Team blocked dates"
-                title="Blok tanggal atau jam tertentu saat weekly schedule saja belum cukup"
-                description="V1 ini dibuat khusus untuk owner internal: simpan pengecualian satu kali per staff supaya assignment booking lebih realistis ketika ada cuti singkat, training, meeting, atau jam yang harus dikosongkan."
-                actions={
-                  <>
-                    <Link href="/team" className={buttonVariants("secondary")}>
-                      Buka roster team
-                    </Link>
-                    <Link href="/team/schedule" className={buttonVariants("secondary")}>
-                      Kelola weekly schedule
-                    </Link>
-                    <Link href="/bookings" className={buttonVariants("secondary")}>
-                      Review booking
-                    </Link>
-                  </>
-                }
-              />
+        <Card data-tutorial="team-blocked-overview" className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <ShieldBan className="h-4 w-4" />
+                  Staff blocked dates
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Team blocked dates"
+                  title="Blok tanggal atau jam tertentu saat weekly schedule belum cukup"
+                  description="Simpan pengecualian satu kali per staff supaya assignment booking lebih realistis ketika ada cuti singkat, training, meeting, atau jam yang harus dikosongkan."
+                  actions={
+                    <>
+                      <Link href="/team" className={buttonVariants("secondary")}>Buka roster team</Link>
+                      <Link href="/team/schedule" className={buttonVariants("secondary")}>Kelola weekly schedule</Link>
+                    </>
+                  }
+                />
+              </div>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="soft-stat rounded-[24px] p-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[420px] xl:max-w-[560px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Upcoming entries</p>
-                  <p className="mt-2 text-2xl font-semibold">{pageData.summary.totalUpcomingEntries}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{pageData.summary.totalUpcomingEntries}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Staff terdampak</p>
-                  <p className="mt-2 text-2xl font-semibold">{pageData.summary.affectedMembers}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{pageData.summary.affectedMembers}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Full-day block</p>
-                  <p className="mt-2 text-2xl font-semibold">{pageData.summary.allDayEntries}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{pageData.summary.allDayEntries}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Entry hari ini</p>
-                  <p className="mt-2 text-2xl font-semibold">{pageData.summary.entriesToday}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{pageData.summary.entriesToday}</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.18em] text-white/60">Quick summary</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight">{membersWithUpcomingBlocks.length} staff punya pengecualian aktif</p>
-                </div>
-                <span className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
-                  Internal only
-                </span>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Staff aktif</p>
+                <p className="mt-2 font-semibold">{activeMembers.length}</p>
               </div>
-              <div className="mt-6 grid gap-3">
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-sm text-white/68">Staff aktif</p>
-                  <p className="mt-1 text-lg font-semibold">{activeMembers.length}</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-sm text-white/68">Timed blocks</p>
-                  <p className="mt-1 text-lg font-semibold">{pageData.summary.timedEntries}</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-sm text-white/68">Dampak assignment</p>
-                  <p className="mt-1 text-sm leading-6 text-white/80">Hint pemilihan staff dan validasi assignment booking sekarang ikut membaca blocked dates ini.</p>
-                </div>
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Timed blocks</p>
+                <p className="mt-2 font-semibold">{pageData.summary.timedEntries}</p>
+              </div>
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Staff punya block</p>
+                <p className="mt-2 font-semibold">{membersWithUpcomingBlocks.length}</p>
               </div>
             </div>
           </div>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-          <Card data-tutorial="team-blocked-form" className="p-6 sm:p-7">
+        <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
+          <Card data-tutorial="team-blocked-form" className="p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <CalendarRange className="h-5 w-5" />
@@ -176,7 +167,7 @@ export default async function TeamBlockedDatesPage({ searchParams }: { searchPar
               <div className="rounded-[22px] border border-teal-100/80 bg-teal-50/70 p-4 text-sm text-[var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                 <div className="flex items-start gap-3">
                   <Sparkles className="mt-0.5 h-4 w-4" />
-                  <p>Kalau checkbox full-day dibiarkan aktif, jam mulai dan selesai akan diabaikan. Isi jam hanya saat owner memang ingin memblok rentang tertentu saja.</p>
+                  <p>Kalau full-day aktif, jam mulai dan selesai akan diabaikan. Isi jam hanya saat memang ingin memblok rentang tertentu saja.</p>
                 </div>
               </div>
 
@@ -184,14 +175,14 @@ export default async function TeamBlockedDatesPage({ searchParams }: { searchPar
             </form>
           </Card>
 
-          <Card className="p-6 sm:p-7">
+          <Card className="p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <Users className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-lg font-semibold">Siapa yang paling banyak punya block</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Ringkasan singkat ini membantu owner membaca siapa yang coverage-nya paling sering di-override dalam waktu dekat.</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">Ringkasan singkat ini membantu owner membaca siapa yang coverage-nya paling sering di-override.</p>
               </div>
             </div>
 
@@ -253,9 +244,7 @@ export default async function TeamBlockedDatesPage({ searchParams }: { searchPar
                           {entry.isAllDay ? "Full day" : "Timed block"}
                         </span>
                         {entry.teamMemberActive === false ? (
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
-                            Nonaktif
-                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Nonaktif</span>
                         ) : null}
                       </div>
 

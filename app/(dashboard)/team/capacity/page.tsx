@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { BriefcaseBusiness, CalendarClock, Gauge, Layers3, Sparkles, Users } from "lucide-react";
+import { BriefcaseBusiness, CalendarClock, Gauge, Layers3, Users } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTutorial } from "@/components/ui/page-tutorial";
-import { buttonVariants } from "@/components/ui/button";
 import { getOwnerBusiness, getTeamCapacityPageData } from "@/lib/data";
 import { formatDurationLabel, formatLongDate } from "@/lib/utils";
 
@@ -38,80 +38,80 @@ export default async function TeamCapacityPage() {
         steps={[
           {
             title: "Baca sinyal kapasitas dulu",
-            description: "Panel atas sengaja ringkas: berapa staff aktif, beban booking hari ini, total durasi terjadwal, dan siapa yang masih longgar.",
-            tip: "Kalau staff sibuk mulai menumpuk, pindah ke kartu detail untuk cek siapa yang masih bisa cover booking berikutnya.",
-            targetSelector: '[data-tutorial="team-capacity-overview"]',
+            description: "Halaman kapasitas sekarang dibuat lebih ringkas supaya owner cepat membaca staff aktif, beban booking hari ini, dan kapasitas mingguan tanpa layout yang terlalu berat.",
+            tip: "Kalau staff sibuk mulai menumpuk, lanjut ke kartu detail untuk cek siapa yang masih longgar."
+,            targetSelector: '[data-tutorial="team-capacity-overview"]',
             targetLabel: "Overview kapasitas"
           },
           {
-            title: "Lihat load per staff dengan cepat",
-            description: "Setiap kartu menggabungkan bookings hari ini, booking mendatang, durasi assignment, layanan yang dipegang, dan hint utilisasi sederhana.",
-            tip: "Ini bukan planner otomatis; cukup buat owner cepat tahu siapa yang ringan, seimbang, atau sudah padat.",
+            title: "Fokus ke load per staff",
+            description: "Kartu staff tetap jadi area kerja utama, tapi layout-nya dibuat lebih seimbang di mobile maupun desktop.",
+            tip: "Cari status available atau light dulu sebelum assign booking baru.",
             targetSelector: '[data-tutorial="team-capacity-grid"]',
             targetLabel: "Roster kapasitas"
           }
         ]}
       />
 
-      <div className="space-y-6 xl:space-y-7">
-        <Card data-tutorial="team-capacity-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <Gauge className="h-4 w-4" />
-                Staff capacity
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Team capacity"
-                title="Workload staff dekat-jatuh-tempo, tanpa bikin planner ribet"
-                description="V1 ini fokus ke visibility operasional: siapa yang aktif, siapa yang sudah padat hari ini, total durasi assignment yang sedang berjalan, dan gambaran weekly availability supaya proses assign booking lebih waras."
-                actions={
-                  <>
-                    <Link href="/team" className={buttonVariants("secondary")}>
-                      Buka roster team
-                    </Link>
-                    <Link href="/team/schedule" className={buttonVariants("secondary")}>
-                      Kelola weekly availability
-                    </Link>
-                  </>
-                }
-              />
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="soft-stat rounded-[24px] p-4">
+      <div className="space-y-5 xl:space-y-6">
+        <Card data-tutorial="team-capacity-overview" className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <Gauge className="h-4 w-4" />
+                  Staff capacity
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Team capacity"
+                  title="Workload staff dekat-jatuh-tempo, tanpa planner yang ribet"
+                  description="Lihat siapa yang aktif, siapa yang padat hari ini, dan siapa yang masih punya ruang untuk assignment berikutnya."
+                  actions={
+                    <>
+                      <Link href="/team" className={buttonVariants("secondary")}>
+                        Buka roster team
+                      </Link>
+                      <Link href="/team/schedule" className={buttonVariants("secondary")}>
+                        Kelola weekly availability
+                      </Link>
+                    </>
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[420px] xl:max-w-[560px] xl:flex-1">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Staff aktif</p>
-                  <p className="mt-2 text-2xl font-semibold">{summary.activeMembers}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{summary.activeMembers}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Sudah ada booking hari ini</p>
-                  <p className="mt-2 text-2xl font-semibold">{summary.assignedToday}</p>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Assigned hari ini</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{summary.assignedToday}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
-                  <p className="text-sm text-[var(--muted)]">Durasi terjadwal hari ini</p>
-                  <p className="mt-2 text-2xl font-semibold">{formatDurationLabel(summary.totalTodayMinutes)}</p>
+                <div className="surface-card rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Durasi hari ini</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{formatDurationLabel(summary.totalTodayMinutes)}</p>
                 </div>
-                <div className="soft-stat rounded-[24px] p-4">
+                <div className="surface-card rounded-[22px] p-4">
                   <p className="text-sm text-[var(--muted)]">Kapasitas mingguan</p>
-                  <p className="mt-2 text-2xl font-semibold">{summary.weeklyCapacityHours} jam</p>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{summary.weeklyCapacityHours} jam</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[30px] bg-[#14312c] p-6 text-white shadow-[0_24px_55px_rgba(20,49,44,0.22)]">
-              <p className="text-sm uppercase tracking-[0.18em] text-white/60">Sinyal operasional</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight">{formatLongDate(focusDate)}</p>
-              <div className="mt-6 space-y-3">
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3">
-                  <p className="text-sm text-white/72">Masih longgar</p>
-                  <p className="mt-1 text-lg font-semibold">{summary.lightlyLoadedMembers} staff</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3">
-                  <p className="text-sm text-white/72">Sudah padat hari ini</p>
-                  <p className="mt-1 text-lg font-semibold">{summary.busyMembers} staff</p>
-                </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/10 px-4 py-3 text-sm leading-6 text-white/72">
-                  Total {summary.totalMembers} staff terdaftar. Gunakan page ini sebagai decision support cepat sebelum assign booking berikutnya.
-                </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Fokus tanggal</p>
+                <p className="mt-2 font-semibold">{formatLongDate(focusDate)}</p>
+              </div>
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Masih longgar</p>
+                <p className="mt-2 font-semibold">{summary.lightlyLoadedMembers} staff</p>
+              </div>
+              <div className="surface-card rounded-[22px] p-4">
+                <p className="text-sm text-[var(--muted)]">Sudah padat</p>
+                <p className="mt-2 font-semibold">{summary.busyMembers} staff</p>
               </div>
             </div>
           </div>
@@ -124,9 +124,9 @@ export default async function TeamCapacityPage() {
             action={<Link href="/team" className={buttonVariants("primary")}>Tambah staff</Link>}
           />
         ) : (
-          <div data-tutorial="team-capacity-grid" className="grid gap-5 2xl:grid-cols-2">
+          <div data-tutorial="team-capacity-grid" className="grid gap-4 2xl:grid-cols-2">
             {members.map((member) => (
-              <Card key={member.id} className="p-6 sm:p-7">
+              <Card key={member.id} className="p-5 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -143,7 +143,7 @@ export default async function TeamCapacityPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="surface-card rounded-[22px] p-4">
                     <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
                       <CalendarClock className="h-4 w-4 text-[var(--primary)]" />
@@ -163,7 +163,7 @@ export default async function TeamCapacityPage() {
                   <div className="surface-card rounded-[22px] p-4">
                     <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
                       <Users className="h-4 w-4 text-[var(--primary)]" />
-                      Weekly availability
+                      Availability
                     </div>
                     <p className="mt-2 font-semibold">{member.weeklyAvailabilityLabel}</p>
                   </div>
@@ -177,22 +177,14 @@ export default async function TeamCapacityPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
                   <div className="field-card rounded-[24px] p-4">
                     <p className="text-sm font-semibold">Coverage & availability</p>
                     <div className="mt-3 space-y-3 text-sm leading-6 text-[var(--muted)]">
-                      <p>
-                        <span className="font-semibold text-[var(--foreground)]">Ringkasan:</span> {member.availabilitySummary || "Belum diisi"}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-[var(--foreground)]">Hari kerja:</span> {member.workDaysSummary.length > 0 ? member.workDaysSummary.join(", ") : "Belum diatur"}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-[var(--foreground)]">Services:</span> {member.assignedServicesSummary}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-[var(--foreground)]">Kapasitas hari ini:</span> {member.todayAvailabilityMinutes > 0 ? formatDurationLabel(member.todayAvailabilityMinutes) : "Tidak ada jam kerja aktif"}
-                      </p>
+                      <p><span className="font-semibold text-[var(--foreground)]">Ringkasan:</span> {member.availabilitySummary || "Belum diisi"}</p>
+                      <p><span className="font-semibold text-[var(--foreground)]">Hari kerja:</span> {member.workDaysSummary.length > 0 ? member.workDaysSummary.join(", ") : "Belum diatur"}</p>
+                      <p><span className="font-semibold text-[var(--foreground)]">Services:</span> {member.assignedServicesSummary}</p>
+                      <p><span className="font-semibold text-[var(--foreground)]">Kapasitas hari ini:</span> {member.todayAvailabilityMinutes > 0 ? formatDurationLabel(member.todayAvailabilityMinutes) : "Tidak ada jam kerja aktif"}</p>
                     </div>
 
                     <div className="mt-4 space-y-3">
@@ -243,34 +235,10 @@ export default async function TeamCapacityPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/team/schedule" className={buttonVariants("secondary")}>
-                    Update weekly availability
-                  </Link>
-                  <Link href="/bookings" className={buttonVariants("ghost")}>
-                    Buka semua booking
-                  </Link>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link href="/team/schedule" className={buttonVariants("secondary")}>Update weekly availability</Link>
+                  <Link href="/bookings" className={buttonVariants("ghost")}>Buka semua booking</Link>
                 </div>
-
-                {!member.active ? (
-                  <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50/90 p-4 text-sm leading-6 text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                    Staff ini sedang nonaktif. Workload tetap ditampilkan agar owner tidak kehilangan konteks assignment dan histori coverage.
-                  </div>
-                ) : null}
-
-                {member.capacityState === "busy" ? (
-                  <div className="mt-4 rounded-[22px] border border-rose-100 bg-rose-50/90 p-4 text-sm leading-6 text-rose-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                    Sinyal load cukup padat hari ini. Kalau ada booking baru dengan service fit yang sama, cek staff lain yang statusnya masih ringan sebelum assign.
-                  </div>
-                ) : member.capacityState === "available" || member.capacityState === "light" ? (
-                  <div className="mt-4 rounded-[22px] border border-emerald-100 bg-emerald-50/90 p-4 text-sm leading-6 text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                    Masih ada ruang kapasitas yang cukup aman untuk hari ini. Cocok dipakai sebagai kandidat awal saat owner melakukan assignment manual.
-                  </div>
-                ) : (
-                  <div className="mt-4 rounded-[22px] border border-amber-100 bg-amber-50/90 p-4 text-sm leading-6 text-amber-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                    Load staff ini mulai terisi, tapi belum masuk kategori padat. Tetap masuk akal untuk dipakai selama service fit dan jam kerja masih cocok.
-                  </div>
-                )}
               </Card>
             ))}
           </div>
