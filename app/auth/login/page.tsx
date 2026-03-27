@@ -70,7 +70,7 @@ export default async function LoginPage({
             <input type="hidden" name="next" value={next} />
             <Input type="email" name="email" placeholder="Email bisnis" required />
             <Input type="password" name="password" placeholder="Password" required />
-            <SubmitButton className="w-full">Login</SubmitButton>
+            <SubmitButton className="w-full" pendingLabel="Sedang login...">Login</SubmitButton>
           </form>
 
           <div className="mt-6 space-y-3 text-sm text-[var(--muted)]">

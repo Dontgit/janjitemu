@@ -475,7 +475,7 @@ export function PublicBookingFlow({
                 <button type="button" className="rounded-2xl border border-[var(--border)] px-5 py-3 text-sm font-semibold" onClick={() => setStep(2)}>
                   Kembali
                 </button>
-                <SubmitButton className="w-full sm:w-auto" disabled={!stepOneReady || !stepTwoReady}>
+                <SubmitButton className="w-full sm:w-auto" disabled={!stepOneReady || !stepTwoReady} pendingLabel="Sedang mengirim booking...">
                   Konfirmasi booking
                 </SubmitButton>
               </div>
@@ -526,7 +526,7 @@ export function PublicBookingFlow({
                     </span>
                   </button>
                 ) : (
-                  <SubmitButton className="flex-1" disabled={!stepOneReady || !stepTwoReady}>
+                  <SubmitButton className="flex-1" disabled={!stepOneReady || !stepTwoReady} pendingLabel="Sedang mengirim...">
                     Konfirmasi
                   </SubmitButton>
                 )}

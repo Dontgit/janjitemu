@@ -62,7 +62,7 @@ export default async function ResetPasswordPage({
               <input type="hidden" name="token" value={token} />
               <Input type="password" name="password" placeholder="Password baru minimal 10 karakter, huruf dan angka" required />
               <Input type="password" name="confirmPassword" placeholder="Ulangi password baru" required />
-              <SubmitButton className="w-full">Simpan password baru</SubmitButton>
+              <SubmitButton className="w-full" pendingLabel="Sedang menyimpan password...">Simpan password baru</SubmitButton>
             </form>
           ) : (
             <div className="mt-8 rounded-[24px] border border-dashed border-[var(--border)] bg-slate-50 p-4 text-sm text-[var(--muted)]">

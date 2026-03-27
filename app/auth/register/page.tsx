@@ -64,7 +64,7 @@ export default async function RegisterPage({
             <div className="sm:col-span-2">
               <Input type="password" name="password" placeholder="Password minimal 10 karakter, huruf dan angka" required />
             </div>
-            <SubmitButton className="w-full sm:col-span-2">Buat akun</SubmitButton>
+            <SubmitButton className="w-full sm:col-span-2" pendingLabel="Sedang membuat akun...">Buat akun</SubmitButton>
           </form>
           <div className="mt-6 rounded-[24px] border border-teal-100 bg-teal-50/70 p-4 text-sm text-[var(--muted)]">
             <div className="flex items-start gap-3">

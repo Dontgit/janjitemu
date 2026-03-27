@@ -65,7 +65,7 @@ export default async function ForgotPasswordPage({
           <form action={requestPasswordReset} className="mt-8 space-y-4">
             <input type="hidden" name="redirectTo" value="/auth/forgot-password" />
             <Input type="email" name="email" placeholder="Email akun owner" required />
-            <SubmitButton className="w-full">Buat link reset</SubmitButton>
+            <SubmitButton className="w-full" pendingLabel="Sedang membuat link...">Buat link reset</SubmitButton>
           </form>
           <p className="mt-6 text-sm text-[var(--muted)]">
             Sudah ingat password? <Link href="/auth/login" className="font-semibold text-[var(--primary)]">Kembali ke login</Link>
