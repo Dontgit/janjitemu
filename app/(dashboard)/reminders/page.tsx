@@ -88,7 +88,7 @@ export default async function ReminderCenterPage({
           title="Fokuskan inbox operasional"
           description="Saring berdasarkan keyword, prioritas, atau jenis reminder untuk sesi review yang lebih cepat."
         >
-          <form className="grid gap-3 lg:min-w-[740px] lg:grid-cols-[minmax(0,1fr)_180px_180px_auto]" method="get">
+          <form className="grid gap-3 lg:w-full lg:max-w-[740px] lg:grid-cols-[minmax(0,1fr)_180px_180px_auto]" method="get">
             <div className="form-field">
               <span className="form-label">Keyword</span>
               <Input name="q" defaultValue={q} placeholder="Cari customer / layanan / judul reminder" />

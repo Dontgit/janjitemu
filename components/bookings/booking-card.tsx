@@ -110,7 +110,7 @@ export function BookingCard({ booking, currentPath, assignableTeamMembers }: Boo
           </Link>
         </div>
 
-        <div className="grid gap-3 xl:min-w-[360px] xl:max-w-[380px] xl:flex-1">
+        <div className="grid gap-3 xl:min-w-[320px] xl:max-w-[380px] xl:flex-1">
           <form action={updateBookingStatus} className="surface-card grid gap-3 rounded-[24px] p-4">
             <input type="hidden" name="redirectTo" value={currentPath} />
             <input type="hidden" name="bookingId" value={booking.id} />

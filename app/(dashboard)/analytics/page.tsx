@@ -207,7 +207,7 @@ export default async function AnalyticsPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="grid min-w-[220px] grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-3 lg:min-w-[220px]">
                           <div className="rounded-[20px] border border-teal-100/80 bg-teal-50/70 p-3">
                             <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Completion</p>
                             <p className="mt-2 text-xl font-semibold text-[var(--foreground)]">{service.completionRate}%</p>

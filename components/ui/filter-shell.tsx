@@ -21,7 +21,7 @@ export function FilterShell({ title, description, children, footer }: FilterShel
           <p className="mt-3 text-lg font-semibold">{title}</p>
           <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
         </div>
-        <div className="w-full lg:w-auto">{children}</div>
+        <div className="min-w-0 w-full lg:w-auto">{children}</div>
       </div>
       {footer ? <div className="mt-4 text-sm text-[var(--muted)]">{footer}</div> : null}
     </Card>
