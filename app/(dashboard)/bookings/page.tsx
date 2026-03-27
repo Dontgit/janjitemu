@@ -123,7 +123,7 @@ export default async function BookingsPage({
               <>Menampilkan {paginatedBookings.items.length} dari {paginatedBookings.total} booking.</>
             }
           >
-            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_170px_190px_220px_auto] xl:items-end" method="get">
+            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_170px_190px_220px]" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={paginatedBookings.perPage} />
               <div className="form-field">
@@ -165,7 +165,7 @@ export default async function BookingsPage({
                   ))}
                 </Select>
               </div>
-              <SubmitButton variant="secondary" className="lg:mb-0.5 lg:w-fit">Terapkan</SubmitButton>
+              <SubmitButton variant="secondary" className="w-full md:col-span-2 xl:col-span-4 xl:w-fit">Terapkan</SubmitButton>
             </form>
           </FilterShell>
         </div>
