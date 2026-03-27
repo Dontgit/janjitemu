@@ -47,56 +47,57 @@ export default async function CustomersPage({
         pageTitle="Customer"
         steps={[
           {
-            title: "Gunakan halaman ini sebagai CRM ringan",
-            description: "Panel snapshot membantu membaca total lead, customer yang sudah booking, dan repeat customer. Ini berguna untuk melihat kualitas basis customer secara cepat.",
-            tip: "Kalau lagi cari peluang promo, mulai dari repeat customer.",
+            title: "Mulai dari ringkasan customer",
+            description: "Halaman customer sekarang dibuat lebih ringkas supaya owner cepat membaca total lead, repeat customer, dan customer yang sudah pernah booking.",
+            tip: "Kalau mau kirim promo atau follow up, mulai dari repeat customer lebih dulu.",
             targetSelector: '[data-tutorial="customers-overview"]',
             targetLabel: "Snapshot customer"
           },
           {
-            title: "Cari berdasarkan sumber atau kontak",
-            description: "Area filter dipakai untuk menyaring customer berdasarkan nama, kontak, atau source lead supaya segmentasi follow up lebih cepat.",
-            tip: "Isi source secara konsisten agar channel acquisition lebih mudah dibaca.",
+            title: "Filter dan tambah customer tanpa layout berat",
+            description: "Filter dan form create dibuat lebih seimbang supaya tetap nyaman di mobile dan tidak terasa terlalu padat di desktop.",
+            tip: "Gunakan source secara konsisten supaya akuisisi customer lebih mudah dibaca nanti.",
             targetSelector: '[data-tutorial="customers-filter"]',
-            targetLabel: "Cari customer"
+            targetLabel: "Filter & create"
           },
           {
-            title: "Simpan catatan yang berguna untuk repeat order",
-            description: "Kartu customer dipakai untuk merapikan profil, mencatat histori singkat, dan menyimpan konteks internal supaya layanan berikutnya terasa lebih personal.",
-            tip: "Jangan hapus customer yang sudah punya histori booking kalau masih ingin menjaga jejak relasi.",
+            title: "Kelola relasi dari daftar yang lebih ringan",
+            description: "Daftar customer dipertahankan sebagai area kerja utama tanpa section yang berlebihan di atasnya.",
+            tip: "Simpan catatan yang benar-benar berguna untuk repeat order berikutnya.",
             targetSelector: '[data-tutorial="customers-list"]',
             targetLabel: "Daftar customer"
           }
         ]}
       />
-      <div className="space-y-6 xl:space-y-7">
+
+      <div className="space-y-5 xl:space-y-6">
         <FeedbackBanner feedback={feedback} />
 
-        <Card data-tutorial="customers-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <Users className="h-4 w-4" />
-                Customer CRM
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Customer"
-                title="Daftar customer dan repeat visitor"
-                description="Kelola lead yang masuk dari booking, rapikan profil customer, dan pertahankan relasi dengan repeat visitor dari satu workspace yang terasa konsisten dengan dashboard utama."
-              />
-            </div>
-            <div className="surface-card rounded-[28px] p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Customer snapshot</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+        <Card data-tutorial="customers-overview" className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <Users className="h-4 w-4" />
+                  Customer CRM
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Customer"
+                  title="Daftar customer dan repeat visitor"
+                  description="Kelola lead yang masuk dari booking, rapikan profil customer, dan jaga relasi tanpa layout yang terlalu berat."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
                 {[
                   ["Total tersimpan", String(customers.total)],
-                  ["Sudah pernah booking", String(customersWithBookings)],
+                  ["Sudah booking", String(customersWithBookings)],
                   ["Repeat customer", String(repeatLeads)]
                 ].map(([label, value]) => (
-                  <div key={label} className="soft-stat rounded-[22px] p-4">
+                  <div key={label} className="surface-card rounded-[22px] p-4">
                     <p className="text-sm text-[var(--muted)]">{label}</p>
-                    <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+                    <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
                   </div>
                 ))}
               </div>
@@ -104,37 +105,35 @@ export default async function CustomersPage({
           </div>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-          <div data-tutorial="customers-filter">
-            <FilterShell
-              title="Cari customer"
-              description="Filter cepat berdasarkan nama, WhatsApp, email, atau sumber lead untuk follow up yang lebih rapi."
-              footer={
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="soft-stat rounded-[22px] p-4">
-                    <p className="text-sm text-[var(--muted)]">Data tampil</p>
-                    <p className="mt-2 text-xl font-semibold">{customers.items.length}</p>
-                  </div>
-                  <div className="soft-stat rounded-[22px] p-4">
-                    <p className="text-sm text-[var(--muted)]">Filter aktif</p>
-                    <p className="mt-2 text-xl font-semibold">{query || source ? "Ya" : "Belum ada"}</p>
-                  </div>
+        <div data-tutorial="customers-filter" className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
+          <FilterShell
+            title="Cari customer"
+            description="Filter cepat berdasarkan nama, WhatsApp, email, atau sumber lead untuk follow up yang lebih rapi."
+            footer={
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="soft-stat rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Data tampil</p>
+                  <p className="mt-2 text-xl font-semibold">{customers.items.length}</p>
                 </div>
-              }
-            >
-              <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_auto] xl:items-end" method="get">
-                <input type="hidden" name="page" value="1" />
-                <input type="hidden" name="perPage" value={customers.perPage} />
-                <Input name="q" placeholder="Cari nama / WhatsApp / email" defaultValue={query} />
-                <Input name="source" placeholder="Filter sumber lead" defaultValue={source} />
-                <SubmitButton variant="secondary" className="sm:w-fit">
-                  Terapkan
-                </SubmitButton>
-              </form>
-            </FilterShell>
-          </div>
+                <div className="soft-stat rounded-[22px] p-4">
+                  <p className="text-sm text-[var(--muted)]">Filter aktif</p>
+                  <p className="mt-2 text-xl font-semibold">{query || source ? "Ya" : "Belum ada"}</p>
+                </div>
+              </div>
+            }
+          >
+            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_auto]" method="get">
+              <input type="hidden" name="page" value="1" />
+              <input type="hidden" name="perPage" value={customers.perPage} />
+              <Input name="q" placeholder="Cari nama / WhatsApp / email" defaultValue={query} />
+              <Input name="source" placeholder="Filter sumber lead" defaultValue={source} />
+              <SubmitButton variant="secondary" className="w-full md:col-span-2 xl:w-fit">
+                Terapkan
+              </SubmitButton>
+            </form>
+          </FilterShell>
 
-          <Card className="p-6 sm:p-7">
+          <Card className="p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <UserPlus className="h-5 w-5" />
@@ -175,18 +174,18 @@ export default async function CustomersPage({
         ) : null}
 
         <div data-tutorial="customers-list">
-        {customers.items.length === 0 ? (
-          <EmptyState
-            title="Belum ada customer"
-            description="Customer akan muncul otomatis saat booking masuk atau bisa ditambahkan manual dari form di atas."
-          />
-        ) : (
-          <div className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
-            {customers.items.map((customer) => (
-              <CustomerCard key={customer.id} customer={customer} currentPath={currentPath} />
-            ))}
-          </div>
-        )}
+          {customers.items.length === 0 ? (
+            <EmptyState
+              title="Belum ada customer"
+              description="Customer akan muncul otomatis saat booking masuk atau bisa ditambahkan manual dari form di atas."
+            />
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+              {customers.items.map((customer) => (
+                <CustomerCard key={customer.id} customer={customer} currentPath={currentPath} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardShell>

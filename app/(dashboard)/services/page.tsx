@@ -50,56 +50,57 @@ export default async function ServicesPage({
         pageTitle="Layanan"
         steps={[
           {
-            title: "Rawat katalog layanan di satu tempat",
-            description: "Bagian overview membantu membaca kesehatan katalog: total layanan, yang sedang aktif, dan yang ditandai populer untuk booking publik.",
-            tip: "Layanan yang dijual ke publik harus tetap aktif.",
+            title: "Mulai dari snapshot katalog",
+            description: "Halaman layanan sekarang dibuat lebih ringkas supaya owner cepat lihat total layanan, layanan aktif, dan yang ditandai populer.",
+            tip: "Kalau lagi bersih-bersih katalog, cek layanan nonaktif dan layanan populer dulu.",
             targetSelector: '[data-tutorial="services-overview"]',
             targetLabel: "Snapshot katalog"
           },
           {
-            title: "Tambah layanan baru dengan struktur lengkap",
-            description: "Form ini dipakai untuk menyiapkan paket baru sejak awal, termasuk harga, durasi, deskripsi, label populer, dan aturan add-on.",
-            tip: "Gunakan label populer untuk layanan unggulan yang ingin didorong.",
+            title: "Filter dan tambah layanan dari layout yang lebih seimbang",
+            description: "Filter dan form create dibuat lebih ringan supaya tetap enak dipakai di mobile maupun desktop.",
+            tip: "Gunakan add-on rules hanya saat memang perlu membatasi add-on ke layanan utama tertentu.",
             targetSelector: '[data-tutorial="services-create"]',
-            targetLabel: "Tambah layanan"
+            targetLabel: "Filter & create"
           },
           {
-            title: "Edit tiap layanan tanpa pindah halaman",
-            description: "Daftar layanan membantu update detail, menonaktifkan layanan, atau mengatur add-on langsung dari kartu yang sudah ada.",
-            tip: "Sesudah edit, preview halaman publik untuk cek hasil akhir.",
-            targetSelector: '[data-tutorial="services-list"]',
+            title: "Kelola layanan dari daftar utama",
+            description: "Daftar layanan dipertahankan sebagai area kerja utama agar edit, aktif/nonaktif, dan add-on tetap mudah diakses.",
+            tip: "Sesudah edit, cek halaman booking publik untuk memastikan copy dan pricing terasa pas."
+,            targetSelector: '[data-tutorial="services-list"]',
             targetLabel: "Daftar layanan"
           }
         ]}
       />
-      <div className="space-y-6 xl:space-y-7">
+
+      <div className="space-y-5 xl:space-y-6">
         <FeedbackBanner feedback={feedback} />
 
-        <Card data-tutorial="services-overview" className="premium-panel overflow-hidden p-6 sm:p-8 xl:p-10">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-            <div>
-              <span className="section-label">
-                <Sparkles className="h-4 w-4" />
-                Service catalog
-              </span>
-              <PageHeader
-                className="mt-4"
-                eyebrow="Services"
-                title="Daftar layanan yang siap dijual"
-                description="Setiap layanan punya durasi, harga, status aktif, dan label populer. Semua terasa seperti satu sistem premium yang sama dengan dashboard overview dan halaman booking publik."
-              />
-            </div>
-            <div className="surface-card rounded-[28px] p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Catalog snapshot</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+        <Card data-tutorial="services-overview" className="premium-panel p-5 sm:p-6 xl:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <span className="section-label">
+                  <Sparkles className="h-4 w-4" />
+                  Service catalog
+                </span>
+                <PageHeader
+                  className="mt-4"
+                  eyebrow="Services"
+                  title="Daftar layanan yang siap dijual"
+                  description="Setiap layanan punya durasi, harga, status aktif, dan aturan add-on tanpa layout yang terlalu berat."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:min-w-[360px] xl:max-w-[460px] xl:flex-1">
                 {[
                   ["Total layanan", String(services.total)],
                   ["Sedang aktif", String(activeCount)],
                   ["Label populer", String(popularCount)]
                 ].map(([label, value]) => (
-                  <div key={label} className="soft-stat rounded-[22px] p-4">
+                  <div key={label} className="surface-card rounded-[22px] p-4">
                     <p className="text-sm text-[var(--muted)]">{label}</p>
-                    <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+                    <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
                   </div>
                 ))}
               </div>
@@ -107,7 +108,7 @@ export default async function ServicesPage({
           </div>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+        <div data-tutorial="services-create" className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
           <FilterShell
             title="Cari & filter layanan"
             description="Temukan layanan berdasarkan nama, deskripsi, atau status aktif supaya cepat tahu mana yang siap dipromosikan."
@@ -124,7 +125,7 @@ export default async function ServicesPage({
               </div>
             }
           >
-            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto] xl:items-end" method="get">
+            <form className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_auto]" method="get">
               <input type="hidden" name="page" value="1" />
               <input type="hidden" name="perPage" value={services.perPage} />
               <Input name="q" placeholder="Cari nama / deskripsi layanan" defaultValue={query} />
@@ -133,13 +134,13 @@ export default async function ServicesPage({
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
               </Select>
-              <SubmitButton variant="secondary" className="sm:w-fit">
+              <SubmitButton variant="secondary" className="w-full md:col-span-2 xl:w-fit">
                 Terapkan
               </SubmitButton>
             </form>
           </FilterShell>
 
-          <Card data-tutorial="services-create" className="p-6 sm:p-7">
+          <Card className="p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <span className="icon-chip">
                 <BriefcaseBusiness className="h-5 w-5" />
@@ -158,7 +159,7 @@ export default async function ServicesPage({
                 <input type="checkbox" name="popular" />
                 Tandai sebagai populer
               </label>
-              <label className="field-card flex items-center gap-3 rounded-2xl px-4 py-3 text-sm">
+              <label className="field-card flex items-center gap-3 rounded-2xl px-4 py-3 text-sm md:col-span-2">
                 <input type="checkbox" name="isAddon" />
                 Ini add-on / layanan tambahan
               </label>
@@ -210,23 +211,23 @@ export default async function ServicesPage({
         ) : null}
 
         <div data-tutorial="services-list">
-        {services.items.length === 0 ? (
-          <EmptyState
-            title="Belum ada layanan"
-            description="Tambahkan layanan pertama agar halaman booking publik punya sesuatu untuk dijual."
-          />
-        ) : (
-          <div className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
-            {services.items.map((service) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                currentPath={currentPath}
-                primaryServiceOptions={primaryServiceOptions}
-              />
-            ))}
-          </div>
-        )}
+          {services.items.length === 0 ? (
+            <EmptyState
+              title="Belum ada layanan"
+              description="Tambahkan layanan pertama agar halaman booking publik punya sesuatu untuk dijual."
+            />
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+              {services.items.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  currentPath={currentPath}
+                  primaryServiceOptions={primaryServiceOptions}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardShell>
