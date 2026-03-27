@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { Search, UserPlus, Users, Repeat, MessageCircleMore } from "lucide-react";
 import { createCustomer, deleteCustomer, updateCustomer } from "@/lib/actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
@@ -187,7 +189,9 @@ export default async function CustomersPage({
               <Card key={customer.id} className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-lg font-semibold tracking-tight">{customer.name}</p>
+                    <Link href={`/customers/${customer.id}`} className="text-lg font-semibold tracking-tight transition hover:text-[var(--primary)]">
+                      {customer.name}
+                    </Link>
                     <p className="mt-1 text-sm text-[var(--muted)]">{customer.phone}</p>
                   </div>
                   <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
@@ -225,6 +229,9 @@ export default async function CustomersPage({
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    <Link href={`/customers/${customer.id}`} className={buttonVariants("ghost")}>
+                      Detail CRM
+                    </Link>
                     <SubmitButton variant="secondary">Update customer</SubmitButton>
                   </div>
                 </form>

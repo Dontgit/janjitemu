@@ -143,6 +143,8 @@ export type Customer = {
   notes?: string | null;
   bookingCount?: number;
   lastBookingAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 export type AvailabilityDay = {
@@ -294,6 +296,28 @@ export type BookingDetailData = {
     totalSpent: number;
     latestBookingAt: string | null;
   };
+};
+
+export type CustomerDetailData = {
+  customer: Customer;
+  recentBookings: Booking[];
+  stats: {
+    totalBookings: number;
+    completedBookings: number;
+    pendingBookings: number;
+    cancelledBookings: number;
+    upcomingBookings: number;
+    totalSpent: number;
+    averageOrderValue: number;
+    latestBookingAt: string | null;
+    recentActivityAt: string | null;
+  };
+  nextAction: {
+    bookingId: string;
+    status: FollowUpStatus;
+    note: string | null;
+    dueAt: string | null;
+  } | null;
 };
 
 export type FollowUpBoardColumn = {

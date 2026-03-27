@@ -17,6 +17,7 @@ import {
   AvailabilityDay,
   Booking,
   BookingDetailData,
+  CustomerDetailData,
   BookingSummary,
   BookingStatus,
   BusinessHour,
@@ -96,6 +97,10 @@ function combineDateTime(date: string, time: string) {
 
 function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60_000);
+}
+
+function itemTimeOrMax(value: string | null | undefined) {
+  return value ? new Date(value).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
 function subtractMinutes(date: Date, minutes: number) {
@@ -1020,6 +1025,148 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
         totalSpent: normalizedBookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0),
         latestBookingAt: normalizedBookings[0] ? getBookingDateTime(normalizedBookings[0]).toISOString() : null
       }
+    };
+  }, null);
+}
+
+export async function getCustomerDetail(customerId: string): Promise<CustomerDetailData | null> {
+  return withFallback(async () => {
+    const business = await getScopedBusinessRecord();
+    if (!business?.id) {
+      const customer = fallbackCustomers.find((item) => item.id === customerId);
+      if (!customer) {
+        return null;
+      }
+
+      const customerBookings = sortBookingsBySchedule(
+        fallbackBookings.filter((item) => item.customerId === customerId)
+      ).reverse();
+      const upcomingBookings = customerBookings.filter((item) => getBookingDateTime(item) >= new Date());
+      const nextActionBooking =
+        customerBookings
+          .filter((item) => item.followUpNextActionAt || (item.followUpStatus ?? "none") !== "none")
+          .sort((a, b) => {
+            const aTime = a.followUpNextActionAt ? new Date(a.followUpNextActionAt).getTime() : Number.MAX_SAFE_INTEGER;
+            const bTime = b.followUpNextActionAt ? new Date(b.followUpNextActionAt).getTime() : Number.MAX_SAFE_INTEGER;
+            return aTime - bTime;
+          })[0] ?? null;
+      const recentActivityAt = customerBookings.reduce<string | null>((latest, booking) => {
+        const candidate = booking.updatedAt ?? booking.createdAt ?? getBookingDateTime(booking).toISOString();
+        if (!latest) return candidate;
+        return new Date(candidate).getTime() > new Date(latest).getTime() ? candidate : latest;
+      }, customer.updatedAt ?? customer.lastBookingAt ?? customer.createdAt ?? null);
+
+      return {
+        customer: {
+          ...customer,
+          bookingCount: customerBookings.length,
+          lastBookingAt: customerBookings[0] ? getBookingDateTime(customerBookings[0]).toISOString() : null
+        },
+        recentBookings: customerBookings.slice(0, 6),
+        stats: {
+          totalBookings: customerBookings.length,
+          completedBookings: customerBookings.filter((item) => item.status === "completed").length,
+          pendingBookings: customerBookings.filter((item) => item.status === "pending").length,
+          cancelledBookings: customerBookings.filter((item) => item.status === "cancelled" || item.status === "no-show").length,
+          upcomingBookings: upcomingBookings.length,
+          totalSpent: customerBookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0),
+          averageOrderValue:
+            customerBookings.length > 0
+              ? Math.round(customerBookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0) / customerBookings.length)
+              : 0,
+          latestBookingAt: customerBookings[0] ? getBookingDateTime(customerBookings[0]).toISOString() : null,
+          recentActivityAt
+        },
+        nextAction: nextActionBooking
+          ? {
+              bookingId: nextActionBooking.id,
+              status: nextActionBooking.followUpStatus ?? "none",
+              note: nextActionBooking.followUpNote ?? nextActionBooking.notes ?? null,
+              dueAt: nextActionBooking.followUpNextActionAt ?? null
+            }
+          : null
+      };
+    }
+
+    const customer = await prisma.customer.findFirst({
+      where: { id: customerId, businessId: business.id }
+    });
+
+    if (!customer) {
+      return null;
+    }
+
+    const bookingRows = await prisma.booking.findMany({
+      where: {
+        businessId: business.id,
+        customerId: customer.id
+      },
+      include: {
+        assignedTeamMember: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            serviceAssignments: {
+              select: { serviceId: true }
+            }
+          }
+        }
+      },
+      orderBy: { scheduledAt: "desc" }
+    });
+
+    const bookings = bookingRows.map(buildBookingFromDb);
+    const upcomingBookings = bookings.filter((item) => getBookingDateTime(item) >= new Date());
+    const totalSpent = bookings.reduce((sum, item) => sum + (item.totalPrice ?? 0), 0);
+    const nextActionBooking =
+      [...bookings]
+        .filter((item) => item.followUpNextActionAt || (item.followUpStatus ?? "none") !== "none")
+        .sort((a, b) => {
+          const aTime = itemTimeOrMax(a.followUpNextActionAt);
+          const bTime = itemTimeOrMax(b.followUpNextActionAt);
+          return aTime - bTime;
+        })[0] ?? null;
+    const recentActivityAt = bookingRows.reduce<string | null>((latest, booking) => {
+      const candidate = booking.updatedAt.toISOString();
+      if (!latest) return candidate;
+      return new Date(candidate).getTime() > new Date(latest).getTime() ? candidate : latest;
+    }, customer.updatedAt.toISOString());
+
+    return {
+      customer: {
+        id: customer.id,
+        businessId: customer.businessId,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        source: customer.source,
+        notes: customer.notes,
+        bookingCount: bookings.length,
+        lastBookingAt: bookings[0] ? getBookingDateTime(bookings[0]).toISOString() : null,
+        createdAt: customer.createdAt.toISOString(),
+        updatedAt: customer.updatedAt.toISOString()
+      },
+      recentBookings: bookings.slice(0, 6),
+      stats: {
+        totalBookings: bookings.length,
+        completedBookings: bookings.filter((item) => item.status === "completed").length,
+        pendingBookings: bookings.filter((item) => item.status === "pending").length,
+        cancelledBookings: bookings.filter((item) => item.status === "cancelled" || item.status === "no-show").length,
+        upcomingBookings: upcomingBookings.length,
+        totalSpent,
+        averageOrderValue: bookings.length > 0 ? Math.round(totalSpent / bookings.length) : 0,
+        latestBookingAt: bookings[0] ? getBookingDateTime(bookings[0]).toISOString() : null,
+        recentActivityAt
+      },
+      nextAction: nextActionBooking
+        ? {
+            bookingId: nextActionBooking.id,
+            status: nextActionBooking.followUpStatus ?? "none",
+            note: nextActionBooking.followUpNote ?? nextActionBooking.notes ?? null,
+            dueAt: nextActionBooking.followUpNextActionAt ?? null
+          }
+        : null
     };
   }, null);
 }
