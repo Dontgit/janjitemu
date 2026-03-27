@@ -72,6 +72,9 @@ export default async function TeamSchedulePage({ searchParams }: { searchParams:
                     <Link href="/team" className={buttonVariants("secondary")}>
                       Buka roster team
                     </Link>
+                    <Link href="/team/capacity" className={buttonVariants("secondary")}>
+                      Lihat kapasitas staff
+                    </Link>
                     <Link href="/schedule" className={buttonVariants("secondary")}>
                       Lihat jadwal booking
                     </Link>

@@ -25,6 +25,9 @@ import {
   TeamMember,
   TeamMemberAvailability,
   AnalyticsPageData,
+  TeamCapacityBookingItem,
+  TeamCapacityMember,
+  TeamCapacityPageData,
   BookingAddOn,
   DashboardHighlight,
   DashboardStat,
@@ -1998,5 +2001,107 @@ export async function getTeamSchedulePageData() {
       totalServices: services.filter((service) => service.active ?? true).length
     },
     weeklyCoverage
+  };
+}
+
+function getMinutesBetween(startTime: string, endTime: string) {
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+  return Math.max(0, end - start);
+}
+
+function getCapacityState(utilizationPercent: number | null, active: boolean, todayAvailabilityMinutes: number) {
+  if (!active) return { state: "inactive" as const, label: "Nonaktif" };
+  if (todayAvailabilityMinutes <= 0) return { state: "available" as const, label: "Belum ada jam kerja hari ini" };
+  if (utilizationPercent === null || utilizationPercent === 0) return { state: "available" as const, label: "Masih kosong hari ini" };
+  if (utilizationPercent >= 75) return { state: "busy" as const, label: "Sudah cukup padat" };
+  if (utilizationPercent >= 40) return { state: "balanced" as const, label: "Load cukup seimbang" };
+  return { state: "light" as const, label: "Masih ringan" };
+}
+
+function toTeamCapacityBookingItem(booking: Booking): TeamCapacityBookingItem {
+  return {
+    id: booking.id,
+    customerName: booking.customerName,
+    serviceName: booking.serviceName,
+    date: booking.date,
+    time: booking.time,
+    endTime: booking.endTime,
+    totalDuration: booking.totalDuration ?? booking.duration ?? 0,
+    status: booking.status
+  };
+}
+
+export async function getTeamCapacityPageData(): Promise<TeamCapacityPageData> {
+  const [teamMembers, bookings] = await Promise.all([getTeamMembers(), getBookings()]);
+  const now = new Date();
+  const today = formatDate(now);
+  const nextWindowEnd = addMinutes(now, 7 * 24 * 60);
+
+  const members: TeamCapacityMember[] = teamMembers.map((member) => {
+    const memberBookings = bookings
+      .filter((booking) => booking.assignedTeamMemberId === member.id && booking.status !== "cancelled")
+      .sort((a, b) => combineDateTime(a.date, a.time).getTime() - combineDateTime(b.date, b.time).getTime());
+    const todayBookings = memberBookings.filter((booking) => booking.date === today);
+    const upcomingBookings = memberBookings.filter((booking) => {
+      const scheduledAt = combineDateTime(booking.date, booking.time);
+      return scheduledAt >= now && scheduledAt <= nextWindowEnd;
+    });
+    const weeklyAvailabilityHours = (member.weeklyAvailability ?? []).reduce((sum, item) => {
+      if (!item.isAvailable) return sum;
+      return sum + getMinutesBetween(item.startTime, item.endTime) / 60;
+    }, 0);
+    const todayAvailability = (member.weeklyAvailability ?? []).find((item) => item.dayOfWeek === now.getDay());
+    const todayAvailabilityMinutes = todayAvailability?.isAvailable
+      ? getMinutesBetween(todayAvailability.startTime, todayAvailability.endTime)
+      : 0;
+    const totalAssignedMinutes = upcomingBookings.reduce((sum, booking) => sum + (booking.totalDuration ?? booking.duration ?? 0), 0);
+    const totalTodayMinutes = todayBookings.reduce((sum, booking) => sum + (booking.totalDuration ?? booking.duration ?? 0), 0);
+    const utilizationPercent = todayAvailabilityMinutes > 0 ? Math.min(999, Math.round((totalTodayMinutes / todayAvailabilityMinutes) * 100)) : null;
+    const capacity = getCapacityState(utilizationPercent, member.active ?? true, todayAvailabilityMinutes);
+    const weeklyAvailabilityLabel = weeklyAvailabilityHours > 0
+      ? `${member.workDaysSummary?.length ?? 0} hari aktif • ${weeklyAvailabilityHours} jam / minggu`
+      : "Belum ada weekly availability";
+
+    return {
+      id: member.id,
+      name: member.name,
+      roleLabel: member.roleLabel,
+      active: member.active ?? true,
+      serviceNames: member.serviceNames ?? [],
+      availabilitySummary: member.availabilitySummary ?? null,
+      workDaysSummary: member.workDaysSummary ?? [],
+      weeklyAvailabilityHours,
+      weeklyAvailabilityLabel,
+      todayAvailabilityMinutes,
+      bookingsToday: todayBookings.length,
+      upcomingBookings: upcomingBookings.length,
+      totalAssignedMinutes,
+      assignedServicesSummary: (member.serviceNames ?? []).length > 0 ? (member.serviceNames ?? []).join(", ") : "Belum ada layanan yang di-assign",
+      utilizationPercent,
+      capacityState: capacity.state,
+      capacityLabel: capacity.label,
+      todayBookings: todayBookings.map(toTeamCapacityBookingItem),
+      nextBookings: upcomingBookings.slice(0, 3).map(toTeamCapacityBookingItem)
+    };
+  }).sort((left, right) => {
+    if (left.active !== right.active) return left.active ? -1 : 1;
+    return right.bookingsToday - left.bookingsToday || right.totalAssignedMinutes - left.totalAssignedMinutes || left.name.localeCompare(right.name, 'id');
+  });
+
+  return {
+    summary: {
+      totalMembers: members.length,
+      activeMembers: members.filter((member) => member.active).length,
+      assignedToday: members.filter((member) => member.bookingsToday > 0).length,
+      totalTodayMinutes: members.reduce((sum, member) => sum + member.todayBookings.reduce((inner, booking) => inner + booking.totalDuration, 0), 0),
+      weeklyCapacityHours: members.reduce((sum, member) => sum + member.weeklyAvailabilityHours, 0),
+      lightlyLoadedMembers: members.filter((member) => member.active && ["available", "light"].includes(member.capacityState)).length,
+      busyMembers: members.filter((member) => member.capacityState === "busy").length
+    },
+    focusDate: today,
+    members
   };
 }

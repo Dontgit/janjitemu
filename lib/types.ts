@@ -145,6 +145,54 @@ export type AvailabilityDay = {
   slots: string[];
 };
 
+
+export type TeamCapacityBookingItem = {
+  id: string;
+  customerName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  endTime?: string;
+  totalDuration: number;
+  status: BookingStatus;
+};
+
+export type TeamCapacityMember = {
+  id: string;
+  name: string;
+  roleLabel: string;
+  active: boolean;
+  serviceNames: string[];
+  availabilitySummary?: string | null;
+  workDaysSummary: string[];
+  weeklyAvailabilityHours: number;
+  weeklyAvailabilityLabel: string;
+  todayAvailabilityMinutes: number;
+  bookingsToday: number;
+  upcomingBookings: number;
+  totalAssignedMinutes: number;
+  assignedServicesSummary: string;
+  utilizationPercent: number | null;
+  capacityState: "available" | "light" | "balanced" | "busy" | "inactive";
+  capacityLabel: string;
+  todayBookings: TeamCapacityBookingItem[];
+  nextBookings: TeamCapacityBookingItem[];
+};
+
+export type TeamCapacityPageData = {
+  summary: {
+    totalMembers: number;
+    activeMembers: number;
+    assignedToday: number;
+    totalTodayMinutes: number;
+    weeklyCapacityHours: number;
+    lightlyLoadedMembers: number;
+    busyMembers: number;
+  };
+  focusDate: string;
+  members: TeamCapacityMember[];
+};
+
 export type AnalyticsMetric = {
   label: string;
   value: string;
