@@ -47,6 +47,9 @@ const MAX_BUSINESS_TEXT_LENGTH = 160;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_NOTES_LENGTH = 2000;
 const MAX_SOURCE_LENGTH = 80;
+const MAX_ROLE_LENGTH = 80;
+const MAX_AVAILABILITY_LENGTH = 120;
+const WEEKLY_AVAILABILITY_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 const FOLLOW_UP_STATUSES = ["none", "needs-follow-up", "contacted", "offer-sent", "won", "lost"] as const;
 
 function normalizeText(value: string, maxLength: number) {
@@ -280,6 +283,47 @@ function isValidTime(value: string) {
   return /^\d{2}:\d{2}$/.test(value);
 }
 
+function parseWeeklyAvailability(formData: FormData) {
+  const hasExplicitWeeklyFields = WEEKLY_AVAILABILITY_DAYS.some((dayOfWeek) => formData.has(`availability-${dayOfWeek}-enabled`));
+  const shortLabels = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const legacySelectedDays = new Set(getSelectedValues(formData, 'workDaysSummary'));
+
+  return WEEKLY_AVAILABILITY_DAYS.map((dayOfWeek) => ({
+    dayOfWeek,
+    isAvailable: hasExplicitWeeklyFields
+      ? getValue(formData, `availability-${dayOfWeek}-enabled`) === "yes"
+      : legacySelectedDays.has(shortLabels[dayOfWeek]),
+    startTime: getValue(formData, `availability-${dayOfWeek}-start`) || "09:00",
+    endTime: getValue(formData, `availability-${dayOfWeek}-end`) || "17:00",
+    note: getNormalizedOptionalText(formData, `availability-${dayOfWeek}-note`, 120)
+  }));
+}
+
+function validateWeeklyAvailability(entries: ReturnType<typeof parseWeeklyAvailability>) {
+  for (const entry of entries) {
+    if (!entry.isAvailable) continue;
+    if (!isValidTime(entry.startTime) || !isValidTime(entry.endTime) || entry.startTime >= entry.endTime) {
+      return "Jam weekly availability staff belum valid. Pastikan jam mulai lebih awal dari jam selesai.";
+    }
+  }
+
+  return null;
+}
+
+function buildAvailabilitySummary(entries: ReturnType<typeof parseWeeklyAvailability>) {
+  const shortLabels = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const active = entries.filter((entry) => entry.isAvailable);
+  if (active.length === 0) return null;
+  const labels = active.map((entry) => shortLabels[entry.dayOfWeek]);
+  const hourSet = [...new Set(active.map((entry) => `${entry.startTime} - ${entry.endTime}`))];
+  return `${labels.join(', ')} • ${hourSet[0]}${hourSet.length > 1 ? ' +' : ''}`;
+}
+
+function buildWorkDaysSummary(entries: ReturnType<typeof parseWeeklyAvailability>) {
+  const shortLabels = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  return entries.filter((entry) => entry.isAvailable).map((entry) => shortLabels[entry.dayOfWeek]);
+}
+
 function parseBookingSlotInterval(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : NaN;
@@ -327,6 +371,27 @@ function getNormalizedName(formData: FormData, key: string) {
 
 function getNormalizedBusinessText(formData: FormData, key: string) {
   return normalizeText(getValue(formData, key), MAX_BUSINESS_TEXT_LENGTH);
+}
+
+
+async function validateTeamServiceAssignments(businessId: string, serviceIds: string[]) {
+  if (serviceIds.length === 0) {
+    return [];
+  }
+
+  const services = await prisma.service.findMany({
+    where: {
+      businessId,
+      id: { in: serviceIds }
+    },
+    select: { id: true }
+  });
+
+  if (services.length !== serviceIds.length) {
+    return null;
+  }
+
+  return services;
 }
 
 function getNormalizedEmail(formData: FormData, key: string) {
@@ -664,6 +729,8 @@ function refreshDashboardRoutes(slug?: string) {
   revalidatePath("/reminders");
   revalidatePath("/customers");
   revalidatePath("/schedule");
+  revalidatePath("/team");
+  revalidatePath("/team/schedule");
   revalidatePath("/settings");
   revalidatePath("/onboarding");
   revalidatePath("/auth/login");
@@ -1523,4 +1590,280 @@ export async function createPublicBooking(formData: FormData) {
 
   refreshDashboardRoutes(business.slug);
   redirect(`/book/${slug}/success`);
+}
+
+
+export async function createTeamMember(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, '/team');
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+
+  const name = getNormalizedName(formData, 'name');
+  const roleLabel = normalizeText(getValue(formData, 'roleLabel'), MAX_ROLE_LENGTH);
+  const phoneRaw = getValue(formData, 'phone');
+  const phone = phoneRaw ? normalizePhoneValue(phoneRaw) : null;
+  const email = getNormalizedOptionalEmail(formData, 'email');
+  const bio = getNormalizedOptionalText(formData, 'bio', MAX_DESCRIPTION_LENGTH);
+  const manualAvailabilitySummary = getNormalizedOptionalText(formData, 'availabilitySummary', MAX_AVAILABILITY_LENGTH);
+  const weeklyAvailability = parseWeeklyAvailability(formData);
+  const weeklyAvailabilityError = validateWeeklyAvailability(weeklyAvailability);
+  const availabilitySummary = manualAvailabilitySummary ?? buildAvailabilitySummary(weeklyAvailability);
+  const workDaysSummary = buildWorkDaysSummary(weeklyAvailability);
+  const serviceIds = [...new Set(getSelectedValues(formData, 'serviceIds'))];
+
+  if (!name || !roleLabel) {
+    redirectWithError(redirectTarget, 'Nama staff dan perannya wajib diisi.');
+  }
+
+  if (phone && !isValidPhone(phone)) {
+    redirectWithError(redirectTarget, 'Nomor WhatsApp staff belum valid.');
+  }
+
+  if (!isValidEmail(email)) {
+    redirectWithError(redirectTarget, 'Email staff belum valid.');
+  }
+
+  if (weeklyAvailabilityError) {
+    redirectWithError(redirectTarget, weeklyAvailabilityError);
+  }
+
+
+  const validatedServices = await validateTeamServiceAssignments(business.id, serviceIds);
+  if (validatedServices === null) {
+    redirectWithError(redirectTarget, 'Ada layanan staff yang tidak valid untuk bisnis ini.');
+  }
+
+  const existingCount = await prisma.teamMember.count({ where: { businessId: business.id } });
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const member = await tx.teamMember.create({
+      data: {
+        businessId: business.id,
+        name,
+        roleLabel,
+        phone,
+        email,
+        bio,
+        availabilitySummary,
+        workDaysSummary,
+        isActive: true,
+        sortOrder: existingCount
+      }
+    });
+
+    await tx.teamMemberAvailability.createMany({
+      data: weeklyAvailability.map((entry) => ({
+        teamMemberId: member.id,
+        dayOfWeek: entry.dayOfWeek,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        isAvailable: entry.isAvailable,
+        note: entry.note
+      })),
+      skipDuplicates: true
+    });
+
+    if (serviceIds.length > 0) {
+      await tx.teamMemberService.createMany({
+        data: serviceIds.map((serviceId) => ({ teamMemberId: member.id, serviceId })),
+        skipDuplicates: true
+      });
+    }
+  });
+
+  refreshDashboardRoutes(business.slug);
+  revalidatePath('/team');
+  revalidatePath('/team/schedule');
+  redirectWithSuccess(redirectTarget, 'Staff baru berhasil ditambahkan.');
+}
+
+export async function updateTeamMember(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, '/team');
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+
+  const teamMemberId = getValue(formData, 'teamMemberId');
+  const name = getNormalizedName(formData, 'name');
+  const roleLabel = normalizeText(getValue(formData, 'roleLabel'), MAX_ROLE_LENGTH);
+  const phoneRaw = getValue(formData, 'phone');
+  const phone = phoneRaw ? normalizePhoneValue(phoneRaw) : null;
+  const email = getNormalizedOptionalEmail(formData, 'email');
+  const bio = getNormalizedOptionalText(formData, 'bio', MAX_DESCRIPTION_LENGTH);
+  const manualAvailabilitySummary = getNormalizedOptionalText(formData, 'availabilitySummary', MAX_AVAILABILITY_LENGTH);
+  const weeklyAvailability = parseWeeklyAvailability(formData);
+  const weeklyAvailabilityError = validateWeeklyAvailability(weeklyAvailability);
+  const availabilitySummary = manualAvailabilitySummary ?? buildAvailabilitySummary(weeklyAvailability);
+  const workDaysSummary = buildWorkDaysSummary(weeklyAvailability);
+  const serviceIds = [...new Set(getSelectedValues(formData, 'serviceIds'))];
+
+  if (!teamMemberId || !name || !roleLabel) {
+    redirectWithError(redirectTarget, 'Data staff belum lengkap.');
+  }
+
+  if (phone && !isValidPhone(phone)) {
+    redirectWithError(redirectTarget, 'Nomor WhatsApp staff belum valid.');
+  }
+
+  if (!isValidEmail(email)) {
+    redirectWithError(redirectTarget, 'Email staff belum valid.');
+  }
+
+  if (weeklyAvailabilityError) {
+    redirectWithError(redirectTarget, weeklyAvailabilityError);
+  }
+
+  const existing = await prisma.teamMember.findFirst({
+    where: { id: teamMemberId, businessId: business.id },
+    select: { id: true }
+  });
+  if (!existing) {
+    redirectWithError(redirectTarget, 'Staff tidak ditemukan.');
+  }
+
+  const validatedServices = await validateTeamServiceAssignments(business.id, serviceIds);
+  if (validatedServices === null) {
+    redirectWithError(redirectTarget, 'Ada layanan staff yang tidak valid untuk bisnis ini.');
+  }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await tx.teamMember.update({
+      where: { id: teamMemberId },
+      data: {
+        name,
+        roleLabel,
+        phone,
+        email,
+        bio,
+        availabilitySummary,
+        workDaysSummary
+      }
+    });
+
+    await tx.teamMemberAvailability.deleteMany({
+      where: { teamMemberId }
+    });
+
+    await tx.teamMemberAvailability.createMany({
+      data: weeklyAvailability.map((entry) => ({
+        teamMemberId,
+        dayOfWeek: entry.dayOfWeek,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        isAvailable: entry.isAvailable,
+        note: entry.note
+      })),
+      skipDuplicates: true
+    });
+
+    await tx.teamMemberService.deleteMany({
+      where: { teamMemberId }
+    });
+
+    if (serviceIds.length > 0) {
+      await tx.teamMemberService.createMany({
+        data: serviceIds.map((serviceId) => ({ teamMemberId, serviceId })),
+        skipDuplicates: true
+      });
+    }
+  });
+
+  refreshDashboardRoutes(business.slug);
+  revalidatePath('/team');
+  revalidatePath('/team/schedule');
+  redirectWithSuccess(redirectTarget, 'Profil staff berhasil diperbarui.');
+}
+
+export async function toggleTeamMemberStatus(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, '/team');
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+  const teamMemberId = getValue(formData, 'teamMemberId');
+  const nextStatus = getValue(formData, 'nextStatus');
+
+  if (!teamMemberId || !nextStatus) {
+    redirectWithError(redirectTarget, 'Aksi status staff tidak valid.');
+  }
+
+  const member = await prisma.teamMember.findFirst({
+    where: { id: teamMemberId, businessId: business.id },
+    select: { id: true, name: true }
+  });
+
+  if (!member) {
+    redirectWithError(redirectTarget, 'Staff tidak ditemukan.');
+  }
+
+  const isActive = nextStatus === 'active';
+  await prisma.teamMember.update({
+    where: { id: teamMemberId },
+    data: { isActive }
+  });
+
+  refreshDashboardRoutes(business.slug);
+  revalidatePath('/team');
+  revalidatePath('/team/schedule');
+  redirectWithSuccess(redirectTarget, isActive ? `${member.name} berhasil diaktifkan.` : `${member.name} berhasil dinonaktifkan.`);
+}
+
+
+export async function updateTeamMemberWeeklyAvailability(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, '/team/schedule');
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+  const teamMemberId = getValue(formData, 'teamMemberId');
+  const availabilitySummaryInput = getNormalizedOptionalText(formData, 'availabilitySummary', MAX_AVAILABILITY_LENGTH);
+  const weeklyAvailabilityNote = getNormalizedOptionalText(formData, 'weeklyAvailabilityNote', 120);
+  const weeklyAvailability = parseWeeklyAvailability(formData).map((entry) => ({
+    ...entry,
+    note: entry.note ?? weeklyAvailabilityNote
+  }));
+
+  if (!teamMemberId) {
+    redirectWithError(redirectTarget, 'Staff tidak ditemukan untuk update jadwal.');
+  }
+
+  const weeklyAvailabilityError = validateWeeklyAvailability(weeklyAvailability);
+  if (weeklyAvailabilityError) {
+    redirectWithError(redirectTarget, weeklyAvailabilityError);
+  }
+
+  const member = await prisma.teamMember.findFirst({
+    where: { id: teamMemberId, businessId: business.id },
+    select: { id: true, name: true }
+  });
+
+  if (!member) {
+    redirectWithError(redirectTarget, 'Staff tidak ditemukan.');
+  }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await tx.teamMember.update({
+      where: { id: teamMemberId },
+      data: {
+        availabilitySummary: availabilitySummaryInput ?? buildAvailabilitySummary(weeklyAvailability),
+        workDaysSummary: buildWorkDaysSummary(weeklyAvailability)
+      }
+    });
+
+    await tx.teamMemberAvailability.deleteMany({
+      where: { teamMemberId }
+    });
+
+    await tx.teamMemberAvailability.createMany({
+      data: weeklyAvailability.map((entry) => ({
+        teamMemberId,
+        dayOfWeek: entry.dayOfWeek,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        isAvailable: entry.isAvailable,
+        note: entry.note
+      })),
+      skipDuplicates: true
+    });
+  });
+
+  refreshDashboardRoutes(business.slug);
+  revalidatePath('/team');
+  revalidatePath('/team/schedule');
+  redirectWithSuccess(redirectTarget, `${member.name} schedule berhasil diperbarui.`);
 }

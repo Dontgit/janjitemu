@@ -10,6 +10,7 @@ import {
   customers as fallbackCustomers,
   dashboardStats as fallbackStats,
   services as fallbackServices,
+  teamMembers as fallbackTeamMembers,
   timelineItems as fallbackTimeline
 } from "@/lib/mock-data";
 import {
@@ -21,18 +22,22 @@ import {
   BusinessHour,
   BusinessProfile,
   Customer,
+  TeamMember,
+  TeamMemberAvailability,
+  AnalyticsPageData,
+  BookingAddOn,
   DashboardHighlight,
   DashboardStat,
   FollowUpBoardColumn,
+  FollowUpStatus,
   PaginatedResult,
   ReminderItem,
   Service,
-  TimelineItem,
-  BookingAddOn,
-  FollowUpStatus
+  TimelineItem
 } from "@/lib/types";
 
 const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
+const shortDayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"] as const;
 const AVAILABILITY_WINDOW_DAYS = 5;
 
 const labelFormatter = new Intl.DateTimeFormat("id-ID", {
@@ -302,6 +307,41 @@ function getReminderPriority(booking: Booking, dueAt: Date, type: ReminderItem["
   return "low";
 }
 
+
+function getBookingStatusLabel(status: BookingStatus) {
+  switch (status) {
+    case "confirmed":
+      return "Confirmed";
+    case "rescheduled":
+      return "Rescheduled";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    case "no-show":
+      return "No-show";
+    default:
+      return "Pending";
+  }
+}
+
+function formatPercent(value: number) {
+  if (!Number.isFinite(value)) {
+    return "0%";
+  }
+
+  return `${Math.round(value)}%`;
+}
+
+function formatCompactCurrency(value: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    notation: value >= 1_000_000 ? "compact" : "standard",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
 function buildAvailability(
   hours: BusinessHour[],
   bookings: Booking[],
@@ -405,6 +445,15 @@ type ServiceListParams = {
   businessId?: string;
   q?: string;
   status?: string;
+  page: number;
+  perPage: number;
+};
+
+type TeamListParams = {
+  businessId?: string;
+  q?: string;
+  status?: string;
+  serviceId?: string;
   page: number;
   perPage: number;
 };
@@ -1382,6 +1431,194 @@ export async function getPublicPageData(slug: string) {
   };
 }
 
+
+export async function getAnalyticsPageData(): Promise<AnalyticsPageData> {
+  const [bookings, services, customers] = await Promise.all([getBookings(), getServices(), getCustomers()]);
+  const primaryServices = services.filter((service) => !service.isAddon);
+  const addonServices = services.filter((service) => service.isAddon);
+  const now = new Date();
+  const nextSevenDaysEnd = addMinutes(now, 7 * 24 * 60);
+  const validRevenueBookings = bookings.filter((booking) => booking.status !== "cancelled" && booking.status !== "no-show");
+  const totalRevenue = validRevenueBookings.reduce((sum, booking) => sum + (booking.totalPrice ?? 0), 0);
+  const completedRevenue = bookings
+    .filter((booking) => booking.status === "completed")
+    .reduce((sum, booking) => sum + (booking.totalPrice ?? 0), 0);
+  const addonRevenue = bookings.reduce(
+    (sum, booking) => sum + (booking.addOns ?? []).reduce((inner, item) => inner + (item.price ?? 0), 0),
+    0
+  );
+  const bookingsWithAddons = bookings.filter((booking) => (booking.addOns ?? []).length > 0).length;
+  const repeatCustomers = customers.filter((customer) => (customer.bookingCount ?? 0) > 1).length;
+  const nextSevenDaysBookings = bookings.filter((booking) => {
+    const scheduledAt = getBookingDateTime(booking);
+    return scheduledAt >= now && scheduledAt <= nextSevenDaysEnd;
+  });
+  const nextSevenDaysRevenue = nextSevenDaysBookings
+    .filter((booking) => booking.status !== "cancelled" && booking.status !== "no-show")
+    .reduce((sum, booking) => sum + (booking.totalPrice ?? 0), 0);
+  const busyDayMap = nextSevenDaysBookings.reduce<Record<string, number>>((acc, booking) => {
+    acc[booking.date] = (acc[booking.date] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const summary = [
+    {
+      label: "Total booking",
+      value: String(bookings.length),
+      detail: `${bookings.filter((booking) => booking.status === "completed").length} selesai • ${bookings.filter((booking) => booking.status === "pending").length} masih pending`
+    },
+    {
+      label: "Revenue tercatat",
+      value: formatCompactCurrency(totalRevenue),
+      detail: `${formatCompactCurrency(completedRevenue)} sudah completed`
+    },
+    {
+      label: "Attach rate add-on",
+      value: formatPercent(bookings.length ? (bookingsWithAddons / bookings.length) * 100 : 0),
+      detail: `${bookingsWithAddons} dari ${bookings.length} booking memakai add-on`
+    },
+    {
+      label: "Customer repeat",
+      value: String(repeatCustomers),
+      detail: `${customers.length} customer tersimpan di workspace`
+    }
+  ];
+
+  const statusBreakdown = (["pending", "confirmed", "rescheduled", "completed", "cancelled", "no-show"] as BookingStatus[])
+    .map((status) => {
+      const count = bookings.filter((booking) => booking.status === status).length;
+      return {
+        status,
+        label: getBookingStatusLabel(status),
+        count,
+        share: bookings.length ? Math.round((count / bookings.length) * 100) : 0
+      };
+    })
+    .filter((item) => item.count > 0 || bookings.length === 0);
+
+  const servicePerformance = primaryServices
+    .map((service) => {
+      const related = bookings.filter((booking) => booking.serviceId === service.id);
+      const completed = related.filter((booking) => booking.status === "completed").length;
+      const revenue = related
+        .filter((booking) => booking.status !== "cancelled" && booking.status !== "no-show")
+        .reduce((sum, booking) => sum + (booking.totalPrice ?? 0), 0);
+      const addonAttached = related.filter((booking) => (booking.addOns ?? []).length > 0).length;
+
+      return {
+        id: service.id,
+        name: service.name,
+        bookings: related.length,
+        revenue,
+        completed,
+        completionRate: related.length ? Math.round((completed / related.length) * 100) : 0,
+        addonAttachRate: related.length ? Math.round((addonAttached / related.length) * 100) : 0
+      };
+    })
+    .sort((a, b) => (b.revenue - a.revenue) || (b.bookings - a.bookings) || a.name.localeCompare(b.name, "id"));
+
+  const addonPerformance = addonServices
+    .map((service) => {
+      const stats = bookings.reduce(
+        (acc, booking) => {
+          const match = (booking.addOns ?? []).find((item) => item.id === service.id || item.name === service.name);
+          if (!match) return acc;
+          acc.attachCount += 1;
+          acc.revenue += match.price ?? 0;
+          acc.totalDuration += match.duration ?? 0;
+          return acc;
+        },
+        { attachCount: 0, revenue: 0, totalDuration: 0 }
+      );
+
+      return {
+        id: service.id,
+        name: service.name,
+        ...stats
+      };
+    })
+    .filter((item) => item.attachCount > 0)
+    .sort((a, b) => (b.revenue - a.revenue) || (b.attachCount - a.attachCount) || a.name.localeCompare(b.name, "id"));
+
+  const dueFollowUps = sortBookingsBySchedule(
+    bookings.filter((booking) => booking.followUpNextActionAt && new Date(booking.followUpNextActionAt) <= nextSevenDaysEnd)
+  ).slice(0, 5);
+
+  const upcomingBookings = sortBookingsBySchedule(
+    bookings.filter((booking) => getBookingDateTime(booking) >= now)
+  ).slice(0, 6);
+
+  const topService = servicePerformance[0];
+  const highestPending = statusBreakdown.find((item) => item.status === "pending");
+  const noShowItem = statusBreakdown.find((item) => item.status === "no-show");
+  const bestAddon = addonPerformance[0];
+
+  const operationalInsights = [
+    topService
+      ? {
+          title: `Layanan terkuat saat ini: ${topService.name}`,
+          detail: `${topService.bookings} booking dengan kontribusi ${formatCompactCurrency(topService.revenue)}. Cocok dijadikan anchor offer atau paket promosi.`,
+          tone: "good" as const
+        }
+      : {
+          title: "Belum ada layanan dominan",
+          detail: "Data booking masih tipis. Setelah booking mulai rutin, panel ini akan membantu melihat layanan yang paling kuat secara revenue dan volume.",
+          tone: "neutral" as const
+        },
+    highestPending && highestPending.count > 0
+      ? {
+          title: "Pending masih perlu perhatian",
+          detail: `${highestPending.count} booking masih pending. Prioritaskan konfirmasi untuk mengurangi slot kosong mendadak di 7 hari ke depan.`,
+          tone: "warning" as const
+        }
+      : {
+          title: "Antrian pending cukup sehat",
+          detail: "Tidak ada penumpukan booking pending yang signifikan. Operasional terlihat lebih siap jalan.",
+          tone: "good" as const
+        },
+    bestAddon
+      ? {
+          title: `Upsell add-on terbaik: ${bestAddon.name}`,
+          detail: `Terpasang ${bestAddon.attachCount} kali dan menambah ${formatCompactCurrency(bestAddon.revenue)}. Ini kandidat terbaik untuk diperjelas di flow booking publik.`,
+          tone: "good" as const
+        }
+      : {
+          title: "Belum ada add-on yang terbukti",
+          detail: "Add-on belum banyak dipilih. Coba tampilkan benefit add-on lebih jelas di booking flow atau gabungkan ke paket utama tertentu.",
+          tone: "neutral" as const
+        },
+    noShowItem && noShowItem.count > 0
+      ? {
+          title: "Ada sinyal no-show",
+          detail: `${noShowItem.count} booking tercatat no-show. Pertimbangkan reminder H-1/H-0 atau deposit untuk slot yang paling rawan.`,
+          tone: "warning" as const
+        }
+      : {
+          title: "Belum ada no-show tercatat",
+          detail: "Bagus untuk v1. Jaga dengan reminder dan follow up yang konsisten sebelum slot mulai padat.",
+          tone: "good" as const
+        }
+  ];
+
+  return {
+    summary,
+    statusBreakdown,
+    servicePerformance,
+    addonPerformance,
+    operationalInsights,
+    upcomingBookings,
+    dueFollowUps,
+    nextSevenDays: {
+      totalBookings: nextSevenDaysBookings.length,
+      totalRevenue: nextSevenDaysRevenue,
+      busyDays: Object.entries(busyDayMap)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => (b.count - a.count) || a.date.localeCompare(b.date))
+        .slice(0, 3)
+    }
+  };
+}
+
 export async function getDashboardPageData() {
   const [business, stats, timeline, bookings, highlights, bookingSummary] = await Promise.all([
     getOwnerBusiness(),
@@ -1415,3 +1652,232 @@ export async function getSchedulePageData() {
 }
 
 export { addMinutes, combineDateTime, formatDate, formatTime, hasOverlap, isBlockingStatus, subtractMinutes };
+
+
+
+function mapTeamMemberAvailability(item: {
+  id?: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  note?: string | null;
+}): TeamMemberAvailability {
+  return {
+    id: item.id,
+    dayOfWeek: item.dayOfWeek,
+    label: dayNames[item.dayOfWeek],
+    shortLabel: shortDayNames[item.dayOfWeek],
+    startTime: item.startTime,
+    endTime: item.endTime,
+    isAvailable: item.isAvailable,
+    note: item.note ?? null
+  };
+}
+
+function buildAvailabilitySummaryFromWeeklyAvailability(weeklyAvailability: TeamMemberAvailability[]) {
+  const activeDays = weeklyAvailability.filter((item) => item.isAvailable);
+  if (activeDays.length === 0) return null;
+  const uniqueHours = [...new Set(activeDays.map((item) => `${item.startTime} - ${item.endTime}`))];
+  const labels = activeDays.map((item) => item.shortLabel);
+  return `${labels.join(', ')} • ${uniqueHours[0]}${uniqueHours.length > 1 ? ' +' : ''}`;
+}
+
+function buildWorkDaysSummaryFromWeeklyAvailability(weeklyAvailability: TeamMemberAvailability[]) {
+  return weeklyAvailability.filter((item) => item.isAvailable).map((item) => item.shortLabel);
+}
+
+function mapTeamMember(member: {
+  id: string;
+  businessId: string;
+  name: string;
+  roleLabel: string;
+  phone: string | null;
+  email: string | null;
+  bio: string | null;
+  availabilitySummary: string | null;
+  workDaysSummary: string[];
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  weeklyAvailability?: Array<{
+    id: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    isAvailable: boolean;
+    note: string | null;
+  }>;
+  serviceAssignments?: Array<{
+    service: {
+      id: string;
+      name: string;
+    };
+  }>;
+}): TeamMember {
+  const availabilityMap = new Map((member.weeklyAvailability ?? []).map((item) => [item.dayOfWeek, mapTeamMemberAvailability(item)]));
+  const weeklyAvailability = Array.from({ length: 7 }, (_, dayOfWeek) => availabilityMap.get(dayOfWeek) ?? mapTeamMemberAvailability({
+    dayOfWeek,
+    startTime: "09:00",
+    endTime: "17:00",
+    isAvailable: false,
+    note: null
+  }));
+  const derivedWorkDays = buildWorkDaysSummaryFromWeeklyAvailability(weeklyAvailability);
+  const derivedSummary = buildAvailabilitySummaryFromWeeklyAvailability(weeklyAvailability);
+  const weeklyAvailabilityNote = weeklyAvailability.map((item) => item.note).find(Boolean) ?? null;
+
+  return {
+    id: member.id,
+    businessId: member.businessId,
+    name: member.name,
+    roleLabel: member.roleLabel,
+    phone: member.phone,
+    email: member.email,
+    bio: member.bio,
+    availabilitySummary: member.availabilitySummary ?? derivedSummary,
+    workDaysSummary: member.workDaysSummary.length > 0 ? member.workDaysSummary : derivedWorkDays,
+    active: member.isActive,
+    serviceIds: member.serviceAssignments?.map((item) => item.service.id) ?? [],
+    serviceNames: member.serviceAssignments?.map((item) => item.service.name) ?? [],
+    weeklyAvailability,
+    weeklyAvailabilityNote,
+    createdAt: member.createdAt?.toISOString() ?? null,
+    updatedAt: member.updatedAt?.toISOString() ?? null
+  };
+}
+
+export async function getTeamMembers(businessId?: string): Promise<TeamMember[]> {
+  return withFallback(async () => {
+    const business = await getScopedBusinessRecord(businessId);
+    if (!business?.id) {
+      return fallbackTeamMembers;
+    }
+
+    const items = await prisma.teamMember.findMany({
+      where: { businessId: business.id },
+      include: {
+        serviceAssignments: {
+          include: {
+            service: {
+              select: { id: true, name: true }
+            }
+          }
+        },
+        weeklyAvailability: {
+          orderBy: { dayOfWeek: 'asc' }
+        }
+      },
+      orderBy: [{ isActive: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }]
+    });
+
+    return items.map(mapTeamMember);
+  }, fallbackTeamMembers);
+}
+
+export async function getPaginatedTeamMembers({
+  businessId,
+  q,
+  status,
+  serviceId,
+  page,
+  perPage
+}: TeamListParams): Promise<PaginatedResult<TeamMember>> {
+  return withFallback(async () => {
+    const business = await getScopedBusinessRecord(businessId);
+    const trimmedQuery = q?.trim();
+
+    if (!business?.id) {
+      const normalizedQuery = trimmedQuery?.toLowerCase() ?? '';
+      const filtered = fallbackTeamMembers.filter((member) => {
+        const matchesQuery =
+          !normalizedQuery ||
+          member.name.toLowerCase().includes(normalizedQuery) ||
+          member.roleLabel.toLowerCase().includes(normalizedQuery) ||
+          (member.serviceNames ?? []).some((name) => name.toLowerCase().includes(normalizedQuery));
+        const matchesStatus =
+          status === 'active'
+            ? member.active ?? true
+            : status === 'inactive'
+              ? !(member.active ?? true)
+              : true;
+        const matchesService = !serviceId || (member.serviceIds ?? []).includes(serviceId);
+        return matchesQuery && matchesStatus && matchesService;
+      });
+
+      return paginateItems(filtered, page, perPage);
+    }
+
+    const where: Prisma.TeamMemberWhereInput = {
+      businessId: business.id,
+      isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+      serviceAssignments: serviceId ? { some: { serviceId } } : undefined,
+      AND: trimmedQuery
+        ? [{
+            OR: [
+              { name: { contains: trimmedQuery, mode: 'insensitive' } },
+              { roleLabel: { contains: trimmedQuery, mode: 'insensitive' } },
+              { availabilitySummary: { contains: trimmedQuery, mode: 'insensitive' } },
+              { serviceAssignments: { some: { service: { name: { contains: trimmedQuery, mode: 'insensitive' } } } } }
+            ]
+          }]
+        : undefined
+    };
+
+    const safePage = Math.max(1, page);
+    const [total, items] = await Promise.all([
+      prisma.teamMember.count({ where }),
+      prisma.teamMember.findMany({
+        where,
+        include: {
+          serviceAssignments: {
+            include: {
+              service: {
+                select: { id: true, name: true }
+              }
+            }
+          },
+          weeklyAvailability: {
+            orderBy: { dayOfWeek: 'asc' }
+          }
+        },
+        orderBy: [{ isActive: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+        skip: (safePage - 1) * perPage,
+        take: perPage
+      })
+    ]);
+
+    return buildPaginatedResult(items.map(mapTeamMember), total, Math.min(safePage, Math.max(1, Math.ceil(total / perPage))), perPage);
+  }, paginateItems(fallbackTeamMembers, page, perPage));
+}
+
+
+export async function getTeamSchedulePageData() {
+  const [teamMembers, services] = await Promise.all([getTeamMembers(), getServices()]);
+  const activeMembers = teamMembers.filter((member) => member.active ?? true);
+  const weeklyCoverage = dayNames.map((label, dayOfWeek) => {
+    const scheduledMembers = activeMembers.filter((member) =>
+      (member.weeklyAvailability ?? []).some((item) => item.dayOfWeek === dayOfWeek && item.isAvailable)
+    );
+
+    return {
+      dayOfWeek,
+      label,
+      shortLabel: shortDayNames[dayOfWeek],
+      scheduledCount: scheduledMembers.length,
+      scheduledNames: scheduledMembers.map((member) => member.name)
+    };
+  });
+
+  return {
+    teamMembers,
+    stats: {
+      totalMembers: teamMembers.length,
+      activeMembers: activeMembers.length,
+      membersWithWeeklyAvailability: teamMembers.filter((member) => (member.weeklyAvailability ?? []).some((item) => item.isAvailable)).length,
+      totalAssignedServices: teamMembers.reduce((sum, member) => sum + (member.serviceIds?.length ?? 0), 0),
+      totalServices: services.filter((service) => service.active ?? true).length
+    },
+    weeklyCoverage
+  };
+}

@@ -2,10 +2,13 @@ import Link from "next/link";
 import {
   CalendarRange,
   ChartColumn,
+  LineChart,
   Settings,
   Sparkles,
   Users,
+  BriefcaseBusiness,
   CalendarDays,
+  CalendarClock,
   KanbanSquare,
   BellRing,
   PanelLeft,
@@ -17,11 +20,14 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: ChartColumn },
+  { href: "/analytics", label: "Analytics", icon: LineChart },
   { href: "/bookings", label: "Bookings", icon: CalendarRange },
   { href: "/follow-ups", label: "Follow-up", icon: KanbanSquare },
   { href: "/reminders", label: "Reminder", icon: BellRing },
   { href: "/services", label: "Layanan", icon: Sparkles },
   { href: "/customers", label: "Customer", icon: Users },
+  { href: "/team", label: "Team", icon: BriefcaseBusiness },
+  { href: "/team/schedule", label: "Jadwal staff", icon: CalendarClock },
   { href: "/schedule", label: "Jadwal", icon: CalendarDays },
   { href: "/settings", label: "Pengaturan", icon: Settings }
 ];

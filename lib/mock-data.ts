@@ -7,6 +7,7 @@ import {
   Customer,
   DashboardStat,
   Service,
+  TeamMember,
   TimelineItem
 } from "@/lib/types";
 
@@ -199,6 +200,80 @@ export const availableDates: AvailabilityDay[] = [
     label: "Sabtu",
     value: "2026-03-28",
     slots: ["08:00", "08:30", "10:00", "13:00", "15:30"]
+  }
+];
+
+
+export const teamMembers: TeamMember[] = [
+  {
+    id: "tm-1",
+    businessId: "business-mock-1",
+    name: "Nadia Pramesti",
+    roleLabel: "Senior Stylist",
+    phone: "0812-7000-1101",
+    email: "nadia@temujanji.test",
+    bio: "Spesialis haircut premium dan styling clean finish untuk sesi cepat maupun signature service.",
+    availabilitySummary: "Senin - Jumat • 10:00 - 18:00",
+    workDaysSummary: ["Sen", "Sel", "Rab", "Kam", "Jum"],
+    weeklyAvailability: [
+      { dayOfWeek: 1, label: "Senin", shortLabel: "Sen", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 2, label: "Selasa", shortLabel: "Sel", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 3, label: "Rabu", shortLabel: "Rab", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 4, label: "Kamis", shortLabel: "Kam", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 5, label: "Jumat", shortLabel: "Jum", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 6, label: "Sabtu", shortLabel: "Sab", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 0, label: "Minggu", shortLabel: "Min", startTime: "00:00", endTime: "00:00", isAvailable: false }
+    ],
+    weeklyAvailabilityNote: "Fokus weekday prime time untuk signature haircut dan creambath.",
+    active: true,
+    serviceIds: ["svc-1", "svc-2"],
+    serviceNames: ["Haircut Signature", "Creambath Relax"]
+  },
+  {
+    id: "tm-2",
+    businessId: "business-mock-1",
+    name: "Citra Maharani",
+    roleLabel: "Skin Therapist",
+    phone: "0813-9000-2202",
+    email: "citra@temujanji.test",
+    bio: "Menangani facial express dan sesi perawatan singkat untuk customer weekday maupun lunchtime rush.",
+    availabilitySummary: "Selasa - Sabtu • 09:00 - 17:00",
+    workDaysSummary: ["Sel", "Rab", "Kam", "Jum", "Sab"],
+    weeklyAvailability: [
+      { dayOfWeek: 1, label: "Senin", shortLabel: "Sen", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 2, label: "Selasa", shortLabel: "Sel", startTime: "09:00", endTime: "17:00", isAvailable: true },
+      { dayOfWeek: 3, label: "Rabu", shortLabel: "Rab", startTime: "09:00", endTime: "17:00", isAvailable: true },
+      { dayOfWeek: 4, label: "Kamis", shortLabel: "Kam", startTime: "09:00", endTime: "17:00", isAvailable: true },
+      { dayOfWeek: 5, label: "Jumat", shortLabel: "Jum", startTime: "09:00", endTime: "17:00", isAvailable: true },
+      { dayOfWeek: 6, label: "Sabtu", shortLabel: "Sab", startTime: "09:00", endTime: "15:00", isAvailable: true, note: "Lunchtime coverage saja." },
+      { dayOfWeek: 0, label: "Minggu", shortLabel: "Min", startTime: "00:00", endTime: "00:00", isAvailable: false }
+    ],
+    weeklyAvailabilityNote: "Weekend lebih pendek agar bisa cover facial express dan add-on.",
+    active: true,
+    serviceIds: ["svc-3", "svc-addon-2"],
+    serviceNames: ["Express Facial", "Vitamin Booster"]
+  },
+  {
+    id: "tm-3",
+    businessId: "business-mock-1",
+    name: "Rendi Akbar",
+    roleLabel: "Support Crew",
+    phone: "0811-8800-3303",
+    availabilitySummary: "On call weekend • butuh aktivasi saat slot padat",
+    workDaysSummary: ["Sab", "Min"],
+    weeklyAvailability: [
+      { dayOfWeek: 1, label: "Senin", shortLabel: "Sen", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 2, label: "Selasa", shortLabel: "Sel", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 3, label: "Rabu", shortLabel: "Rab", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 4, label: "Kamis", shortLabel: "Kam", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 5, label: "Jumat", shortLabel: "Jum", startTime: "00:00", endTime: "00:00", isAvailable: false },
+      { dayOfWeek: 6, label: "Sabtu", shortLabel: "Sab", startTime: "10:00", endTime: "18:00", isAvailable: true },
+      { dayOfWeek: 0, label: "Minggu", shortLabel: "Min", startTime: "11:00", endTime: "16:00", isAvailable: true, note: "Aktif kalau load appointment naik." }
+    ],
+    weeklyAvailabilityNote: "Cadangan akhir pekan untuk bantu add-on dan overflow slot.",
+    active: false,
+    serviceIds: ["svc-addon-1"],
+    serviceNames: ["Hair Spa Add-on"]
   }
 ];
 

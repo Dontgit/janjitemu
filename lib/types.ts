@@ -91,6 +91,37 @@ export type BusinessProfile = {
   onboardingCompleted?: boolean;
 };
 
+
+export type TeamMemberAvailability = {
+  id?: string;
+  dayOfWeek: number;
+  label: string;
+  shortLabel: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  note?: string | null;
+};
+
+export type TeamMember = {
+  id: string;
+  businessId?: string;
+  name: string;
+  roleLabel: string;
+  phone?: string | null;
+  email?: string | null;
+  bio?: string | null;
+  availabilitySummary?: string | null;
+  workDaysSummary?: string[];
+  active?: boolean;
+  serviceIds?: string[];
+  serviceNames?: string[];
+  weeklyAvailability?: TeamMemberAvailability[];
+  weeklyAvailabilityNote?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type Customer = {
   id: string;
   businessId?: string;
@@ -107,6 +138,61 @@ export type AvailabilityDay = {
   label: string;
   value: string;
   slots: string[];
+};
+
+export type AnalyticsMetric = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+export type AnalyticsStatusBreakdownItem = {
+  status: BookingStatus;
+  label: string;
+  count: number;
+  share: number;
+};
+
+export type AnalyticsServicePerformanceItem = {
+  id: string;
+  name: string;
+  bookings: number;
+  revenue: number;
+  completed: number;
+  completionRate: number;
+  addonAttachRate: number;
+};
+
+export type AnalyticsAddonPerformanceItem = {
+  id: string;
+  name: string;
+  attachCount: number;
+  revenue: number;
+  totalDuration: number;
+};
+
+export type AnalyticsInsightItem = {
+  title: string;
+  detail: string;
+  tone: "good" | "warning" | "neutral";
+};
+
+export type AnalyticsPageData = {
+  summary: AnalyticsMetric[];
+  statusBreakdown: AnalyticsStatusBreakdownItem[];
+  servicePerformance: AnalyticsServicePerformanceItem[];
+  addonPerformance: AnalyticsAddonPerformanceItem[];
+  operationalInsights: AnalyticsInsightItem[];
+  upcomingBookings: Booking[];
+  dueFollowUps: Booking[];
+  nextSevenDays: {
+    totalBookings: number;
+    totalRevenue: number;
+    busyDays: Array<{
+      date: string;
+      count: number;
+    }>;
+  };
 };
 
 export type DashboardStat = {
