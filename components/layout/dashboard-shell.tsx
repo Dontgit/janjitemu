@@ -29,6 +29,7 @@ const links = [
   { href: "/team", label: "Team", icon: BriefcaseBusiness },
   { href: "/team/capacity", label: "Kapasitas staff", icon: CalendarClock },
   { href: "/team/schedule", label: "Jadwal staff", icon: CalendarClock },
+  { href: "/team/blocked-dates", label: "Blocked dates", icon: CalendarClock },
   { href: "/schedule", label: "Jadwal", icon: CalendarDays },
   { href: "/settings", label: "Pengaturan", icon: Settings }
 ];

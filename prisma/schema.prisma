@@ -119,6 +119,7 @@ model TeamMember {
   business            Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceAssignments  TeamMemberService[]
   weeklyAvailability  TeamMemberAvailability[]
+  blockedEntries      TeamMemberBlockedDate[]
   assignedBookings    Booking[]
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
@@ -153,6 +154,22 @@ model TeamMemberAvailability {
 
   @@unique([teamMemberId, dayOfWeek])
   @@index([dayOfWeek])
+}
+
+model TeamMemberBlockedDate {
+  id           String     @id @default(cuid())
+  teamMemberId String
+  date         DateTime
+  startTime    String?
+  endTime      String?
+  isAllDay     Boolean    @default(true)
+  note         String?
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([teamMemberId, date])
+  @@index([date])
 }
 
 model Customer {

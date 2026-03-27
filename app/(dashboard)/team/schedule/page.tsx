@@ -75,6 +75,9 @@ export default async function TeamSchedulePage({ searchParams }: { searchParams:
                     <Link href="/team/capacity" className={buttonVariants("secondary")}>
                       Lihat kapasitas staff
                     </Link>
+                    <Link href="/team/blocked-dates" className={buttonVariants("secondary")}>
+                      Kelola blocked dates
+                    </Link>
                     <Link href="/schedule" className={buttonVariants("secondary")}>
                       Lihat jadwal booking
                     </Link>

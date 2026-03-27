@@ -266,7 +266,7 @@ export default async function BookingDetailPage({
                       </option>
                     ))}
                   </Select>
-                  <p className="mt-2 text-xs text-[var(--muted)]">Urutan staff diprioritaskan yang tidak bentrok, masih available di weekly schedule, cocok layanan, lalu workload harian paling ringan. Simpan akan ditolak kalau staff bentrok atau di luar jam availability.</p>
+                  <p className="mt-2 text-xs text-[var(--muted)]">Urutan staff diprioritaskan yang tidak bentrok, masih available di weekly schedule, tidak sedang diblok manual, cocok layanan, lalu workload harian paling ringan. Simpan akan ditolak kalau staff bentrok, diblok, atau di luar jam availability.</p>
                 </div>
                 <div className="form-field">
                   <span className="form-label">Catatan</span>

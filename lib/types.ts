@@ -108,6 +108,20 @@ export type TeamMemberAvailability = {
   note?: string | null;
 };
 
+export type TeamMemberBlockedEntry = {
+  id: string;
+  teamMemberId: string;
+  teamMemberName?: string;
+  teamMemberActive?: boolean;
+  date: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  isAllDay: boolean;
+  note?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type TeamMember = {
   id: string;
   businessId?: string;
@@ -123,6 +137,7 @@ export type TeamMember = {
   serviceNames?: string[];
   weeklyAvailability?: TeamMemberAvailability[];
   weeklyAvailabilityNote?: string | null;
+  blockedEntries?: TeamMemberBlockedEntry[];
   serviceFit?: boolean;
   dailyLoad?: number | null;
   availabilityFit?: boolean | null;
@@ -199,6 +214,28 @@ export type TeamCapacityPageData = {
   };
   focusDate: string;
   members: TeamCapacityMember[];
+};
+
+export type TeamBlockedDatesPageData = {
+  summary: {
+    totalUpcomingEntries: number;
+    affectedMembers: number;
+    allDayEntries: number;
+    timedEntries: number;
+    entriesToday: number;
+  };
+  teamMembers: TeamMember[];
+  upcomingEntries: TeamMemberBlockedEntry[];
+  memberSummaries: Array<{
+    memberId: string;
+    name: string;
+    roleLabel: string;
+    active: boolean;
+    upcomingCount: number;
+    allDayCount: number;
+    timedCount: number;
+    nextBlockedDate: string | null;
+  }>;
 };
 
 export type AnalyticsMetric = {

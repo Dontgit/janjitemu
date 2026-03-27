@@ -227,7 +227,7 @@ export default async function BookingsPage({
                   </option>
                 ))}
               </Select>
-              <p className="mt-2 text-xs text-[var(--muted)]">Staff aktif diprioritaskan. Saat submit, sistem sekarang akan menolak assignment staff yang bentrok dengan booking lain atau di luar weekly availability. Hint service fit tetap jadi panduan operasional.</p>
+              <p className="mt-2 text-xs text-[var(--muted)]">Staff aktif diprioritaskan. Saat submit, sistem sekarang akan menolak assignment staff yang bentrok dengan booking lain, di luar weekly availability, atau sedang diblok di blocked dates. Hint service fit tetap jadi panduan operasional.</p>
             </div>
             {addOnServices.length > 0 ? (
               <div className="form-field md:col-span-2 xl:col-span-3">
@@ -381,7 +381,7 @@ export default async function BookingsPage({
                             </option>
                           ))}
                         </Select>
-                        <p className="mt-2 text-xs text-[var(--muted)]">Hint kapasitas harian dihitung dari jumlah booking staff di tanggal yang sama. Saat disimpan, assignment tetap diblok bila staff bentrok atau di luar weekly availability.</p>
+                        <p className="mt-2 text-xs text-[var(--muted)]">Hint kapasitas harian dihitung dari jumlah booking staff di tanggal yang sama. Saat disimpan, assignment tetap diblok bila staff bentrok, di luar weekly availability, atau sedang diblok manual.</p>
                       </div>
                       <div className="form-field">
                         <span className="form-label">Catatan</span>

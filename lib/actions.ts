@@ -16,7 +16,7 @@ import {
 } from "@/lib/auth";
 import { normalizeRedirectTarget, withFeedback, withPublicBookingValues } from "@/lib/feedback";
 import { buildBookingUrl } from "@/lib/app-config";
-import { addMinutes, combineDateTime, hasDatabaseUrl } from "@/lib/data";
+import { addMinutes, combineDateTime, findBlockedEntryForSlot, formatDate, getBlockedEntryWindowLabel, hasDatabaseUrl } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 
 const defaultBusiness = {
@@ -49,6 +49,7 @@ const MAX_NOTES_LENGTH = 2000;
 const MAX_SOURCE_LENGTH = 80;
 const MAX_ROLE_LENGTH = 80;
 const MAX_AVAILABILITY_LENGTH = 120;
+const MAX_BLOCK_NOTE_LENGTH = 160;
 const WEEKLY_AVAILABILITY_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 const FOLLOW_UP_STATUSES = ["none", "needs-follow-up", "contacted", "offer-sent", "won", "lost"] as const;
 const UNASSIGNED_TEAM_MEMBER_VALUE = "unassigned";
@@ -241,6 +242,22 @@ async function validateAssignedTeamMember({
       weeklyAvailability: {
         where: scheduledAt ? { dayOfWeek: scheduledAt.getDay() } : undefined,
         select: { dayOfWeek: true, startTime: true, endTime: true, isAvailable: true }
+      },
+      blockedEntries: {
+        where: scheduledAt
+          ? {
+              date: {
+                gte: combineDateTime(formatDateInputValue(scheduledAt), "00:00"),
+                lt: combineDateTime(formatDateInputValue(addMinutes(scheduledAt, 24 * 60)), "00:00")
+              }
+            }
+          : undefined,
+        select: {
+          date: true,
+          startTime: true,
+          endTime: true,
+          isAllDay: true
+        }
       }
     }
   });
@@ -266,6 +283,25 @@ async function validateAssignedTeamMember({
     if (bookingStartTime < dayAvailability.startTime || bookingEndTime > dayAvailability.endTime) {
       return {
         error: `${member.name} hanya tersedia ${dayAvailability.startTime}-${dayAvailability.endTime} pada hari itu, jadi assignment ini belum bisa dipakai.`
+      };
+    }
+
+    const blockedEntry = findBlockedEntryForSlot(
+      member.blockedEntries.map((entry) => ({
+        date: formatDate(entry.date),
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        isAllDay: entry.isAllDay
+      })),
+      scheduledAt,
+      endAt
+    );
+
+    if (blockedEntry) {
+      return {
+        error: blockedEntry.isAllDay
+          ? `${member.name} diblok full-day pada ${bookingDate}, jadi assignment ini tidak bisa dipakai.`
+          : `${member.name} diblok pada ${bookingDate} ${getBlockedEntryWindowLabel(blockedEntry)}, jadi assignment ini tidak bisa dipakai.`
       };
     }
 
@@ -404,6 +440,37 @@ function validateWeeklyAvailability(entries: ReturnType<typeof parseWeeklyAvaila
     if (!isValidTime(entry.startTime) || !isValidTime(entry.endTime) || entry.startTime >= entry.endTime) {
       return "Jam weekly availability staff belum valid. Pastikan jam mulai lebih awal dari jam selesai.";
     }
+  }
+
+  return null;
+}
+
+function parseBlockedDateEntry(formData: FormData) {
+  const date = getValue(formData, "date");
+  const isAllDay = getValue(formData, "isAllDay") === "yes";
+  const startTime = getValue(formData, "startTime");
+  const endTime = getValue(formData, "endTime");
+
+  return {
+    date,
+    isAllDay,
+    startTime: startTime || null,
+    endTime: endTime || null,
+    note: getNormalizedOptionalText(formData, "note", MAX_BLOCK_NOTE_LENGTH)
+  };
+}
+
+function validateBlockedDateEntry(entry: ReturnType<typeof parseBlockedDateEntry>) {
+  if (!isValidDate(entry.date)) {
+    return "Tanggal blocked date belum valid.";
+  }
+
+  if (entry.isAllDay) {
+    return null;
+  }
+
+  if (!entry.startTime || !entry.endTime || !isValidTime(entry.startTime) || !isValidTime(entry.endTime) || entry.startTime >= entry.endTime) {
+    return "Jam blocked date belum valid. Pastikan jam mulai lebih awal dari jam selesai.";
   }
 
   return null;
@@ -857,7 +924,9 @@ function refreshDashboardRoutes(slug?: string) {
   revalidatePath("/customers");
   revalidatePath("/schedule");
   revalidatePath("/team");
+  revalidatePath("/team/capacity");
   revalidatePath("/team/schedule");
+  revalidatePath("/team/blocked-dates");
   revalidatePath("/settings");
   revalidatePath("/onboarding");
   revalidatePath("/auth/login");
@@ -2010,4 +2079,99 @@ export async function updateTeamMemberWeeklyAvailability(formData: FormData) {
   revalidatePath('/team');
   revalidatePath('/team/schedule');
   redirectWithSuccess(redirectTarget, `${member.name} schedule berhasil diperbarui.`);
+}
+
+export async function createTeamMemberBlockedDate(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, "/team/blocked-dates");
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+  const teamMemberId = getValue(formData, "teamMemberId");
+  const blockedEntry = parseBlockedDateEntry(formData);
+
+  if (!teamMemberId) {
+    redirectWithError(redirectTarget, "Pilih staff yang ingin diblok dulu.");
+  }
+
+  const validationError = validateBlockedDateEntry(blockedEntry);
+  if (validationError) {
+    redirectWithError(redirectTarget, validationError);
+  }
+
+  if (blockedEntry.date < formatDate(new Date())) {
+    redirectWithError(redirectTarget, "Blocked date V1 hanya bisa dibuat untuk hari ini atau tanggal berikutnya.");
+  }
+
+  const member = await prisma.teamMember.findFirst({
+    where: { id: teamMemberId, businessId: business.id },
+    select: { id: true, name: true }
+  });
+
+  if (!member) {
+    redirectWithError(redirectTarget, "Staff tidak ditemukan untuk bisnis ini.");
+  }
+
+  const normalizedDate = combineDateTime(blockedEntry.date, "00:00");
+  const existing = await prisma.teamMemberBlockedDate.findFirst({
+    where: {
+      teamMemberId,
+      date: normalizedDate,
+      isAllDay: blockedEntry.isAllDay,
+      startTime: blockedEntry.isAllDay ? null : blockedEntry.startTime,
+      endTime: blockedEntry.isAllDay ? null : blockedEntry.endTime
+    },
+    select: { id: true }
+  });
+
+  if (existing) {
+    redirectWithError(redirectTarget, "Blocked date dengan kombinasi staff, tanggal, dan jam yang sama sudah ada.");
+  }
+
+  await prisma.teamMemberBlockedDate.create({
+    data: {
+      teamMemberId,
+      date: normalizedDate,
+      startTime: blockedEntry.isAllDay ? null : blockedEntry.startTime,
+      endTime: blockedEntry.isAllDay ? null : blockedEntry.endTime,
+      isAllDay: blockedEntry.isAllDay,
+      note: blockedEntry.note
+    }
+  });
+
+  refreshDashboardRoutes(business.slug);
+  redirectWithSuccess(redirectTarget, `Blocked date untuk ${member.name} berhasil ditambahkan.`);
+}
+
+export async function deleteTeamMemberBlockedDate(formData: FormData) {
+  const redirectTarget = getRedirectTarget(formData, "/team/blocked-dates");
+  ensureDatabaseConfigured(redirectTarget);
+  const business = await requireAuthenticatedBusiness();
+  const blockedDateId = getValue(formData, "blockedDateId");
+
+  if (!blockedDateId) {
+    redirectWithError(redirectTarget, "Blocked date yang dipilih tidak valid.");
+  }
+
+  const entry = await prisma.teamMemberBlockedDate.findFirst({
+    where: {
+      id: blockedDateId,
+      teamMember: { businessId: business.id }
+    },
+    select: {
+      id: true,
+      teamMember: {
+        select: { name: true }
+      }
+    }
+  });
+
+  if (!entry) {
+    redirectWithError(redirectTarget, "Blocked date tidak ditemukan.");
+  }
+
+  await prisma.teamMemberBlockedDate.delete({
+    where: { id: blockedDateId }
+  });
+
+  refreshDashboardRoutes(business.slug);
+  redirectWithSuccess(redirectTarget, `Blocked date untuk ${entry.teamMember.name} berhasil dihapus.`);
 }

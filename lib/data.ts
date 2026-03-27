@@ -25,10 +25,12 @@ import {
   Customer,
   TeamMember,
   TeamMemberAvailability,
+  TeamMemberBlockedEntry,
   AnalyticsPageData,
   TeamCapacityBookingItem,
   TeamCapacityMember,
   TeamCapacityPageData,
+  TeamBlockedDatesPageData,
   BookingAddOn,
   DashboardHighlight,
   DashboardStat,
@@ -331,18 +333,28 @@ function getAssignmentWarningsForMember({
     const slotStart = combineDateTime(date, time);
     const slotEnd = combineDateTime(date, endTime);
     const weeklyAvailability = (member.weeklyAvailability ?? []).find((item) => item.dayOfWeek === slotStart.getDay());
+    const blockedEntry = findBlockedEntryForSlot(member.blockedEntries ?? [], slotStart, slotEnd);
     availabilityFit = Boolean(
       weeklyAvailability &&
       weeklyAvailability.isAvailable &&
       time >= weeklyAvailability.startTime &&
-      endTime <= weeklyAvailability.endTime
+      endTime <= weeklyAvailability.endTime &&
+      !blockedEntry
     );
 
     if (!availabilityFit) {
       if (!weeklyAvailability || !weeklyAvailability.isAvailable) {
         warnings.push("tidak tersedia di hari itu");
-      } else {
+      } else if (time < weeklyAvailability.startTime || endTime > weeklyAvailability.endTime) {
         warnings.push(`di luar jam ${weeklyAvailability.startTime}-${weeklyAvailability.endTime}`);
+      }
+
+      if (blockedEntry) {
+        warnings.push(
+          blockedEntry.isAllDay || !blockedEntry.startTime || !blockedEntry.endTime
+            ? "diblok full-day"
+            : `diblok ${blockedEntry.startTime}-${blockedEntry.endTime}`
+        );
       }
     }
 
@@ -1964,7 +1976,69 @@ export async function getSchedulePageData() {
 
 export { addMinutes, combineDateTime, formatDate, formatTime, hasOverlap, isBlockingStatus, subtractMinutes };
 
+function mapTeamMemberBlockedEntry(item: {
+  id: string;
+  teamMemberId: string;
+  date: Date;
+  startTime: string | null;
+  endTime: string | null;
+  isAllDay: boolean;
+  note: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  teamMember?: {
+    name: string;
+    isActive: boolean;
+  } | null;
+}): TeamMemberBlockedEntry {
+  return {
+    id: item.id,
+    teamMemberId: item.teamMemberId,
+    teamMemberName: item.teamMember?.name,
+    teamMemberActive: item.teamMember?.isActive,
+    date: formatDate(item.date),
+    startTime: item.startTime,
+    endTime: item.endTime,
+    isAllDay: item.isAllDay,
+    note: item.note ?? null,
+    createdAt: item.createdAt?.toISOString() ?? null,
+    updatedAt: item.updatedAt?.toISOString() ?? null
+  };
+}
 
+export function doesBlockedEntryOverlapSlot(
+  entry: Pick<TeamMemberBlockedEntry, "date" | "startTime" | "endTime" | "isAllDay">,
+  slotStart: Date,
+  slotEnd: Date
+) {
+  if (entry.date !== formatDate(slotStart)) {
+    return false;
+  }
+
+  if (entry.isAllDay || !entry.startTime || !entry.endTime) {
+    return true;
+  }
+
+  const blockedStart = combineDateTime(entry.date, entry.startTime);
+  const blockedEnd = combineDateTime(entry.date, entry.endTime);
+  return slotStart < blockedEnd && slotEnd > blockedStart;
+}
+
+export function findBlockedEntryForSlot(
+  entries: Array<Pick<TeamMemberBlockedEntry, "date" | "startTime" | "endTime" | "isAllDay">>,
+  slotStart: Date,
+  slotEnd: Date
+) {
+  return entries.find((entry) => doesBlockedEntryOverlapSlot(entry, slotStart, slotEnd)) ?? null;
+}
+
+export function getBlockedEntryWindowLabel(entry: Pick<TeamMemberBlockedEntry, "startTime" | "endTime" | "isAllDay">) {
+  if (entry.isAllDay || !entry.startTime || !entry.endTime) {
+    return "full-day";
+  }
+
+  return `${entry.startTime}-${entry.endTime}`;
+}
 
 function mapTeamMemberAvailability(item: {
   id?: string;
@@ -2019,6 +2093,17 @@ function mapTeamMember(member: {
     isAvailable: boolean;
     note: string | null;
   }>;
+  blockedEntries?: Array<{
+    id: string;
+    teamMemberId: string;
+    date: Date;
+    startTime: string | null;
+    endTime: string | null;
+    isAllDay: boolean;
+    note: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
   serviceAssignments?: Array<{
     service: {
       id: string;
@@ -2053,6 +2138,7 @@ function mapTeamMember(member: {
     serviceNames: member.serviceAssignments?.map((item) => item.service.name) ?? [],
     weeklyAvailability,
     weeklyAvailabilityNote,
+    blockedEntries: (member.blockedEntries ?? []).map(mapTeamMemberBlockedEntry),
     createdAt: member.createdAt?.toISOString() ?? null,
     updatedAt: member.updatedAt?.toISOString() ?? null
   };
@@ -2121,6 +2207,8 @@ export async function getTeamMembers(businessId?: string): Promise<TeamMember[]>
       return fallbackTeamMembers;
     }
 
+    const upcomingDate = combineDateTime(formatDate(new Date()), "00:00");
+
     const items = await prisma.teamMember.findMany({
       where: { businessId: business.id },
       include: {
@@ -2133,6 +2221,14 @@ export async function getTeamMembers(businessId?: string): Promise<TeamMember[]>
         },
         weeklyAvailability: {
           orderBy: { dayOfWeek: 'asc' }
+        },
+        blockedEntries: {
+          where: {
+            date: {
+              gte: upcomingDate
+            }
+          },
+          orderBy: [{ date: 'asc' }, { startTime: 'asc' }]
         }
       },
       orderBy: [{ isActive: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }]
@@ -2192,6 +2288,7 @@ export async function getPaginatedTeamMembers({
     };
 
     const safePage = Math.max(1, page);
+    const upcomingDate = combineDateTime(formatDate(new Date()), "00:00");
     const [total, items] = await Promise.all([
       prisma.teamMember.count({ where }),
       prisma.teamMember.findMany({
@@ -2206,6 +2303,14 @@ export async function getPaginatedTeamMembers({
           },
           weeklyAvailability: {
             orderBy: { dayOfWeek: 'asc' }
+          },
+          blockedEntries: {
+            where: {
+              date: {
+                gte: upcomingDate
+              }
+            },
+            orderBy: [{ date: 'asc' }, { startTime: 'asc' }]
           }
         },
         orderBy: [{ isActive: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -2247,6 +2352,107 @@ export async function getTeamSchedulePageData() {
     },
     weeklyCoverage
   };
+}
+
+export async function getTeamBlockedDatesPageData(): Promise<TeamBlockedDatesPageData> {
+  return withFallback(async () => {
+    const business = await getScopedBusinessRecord();
+    if (!business?.id) {
+      return {
+        summary: {
+          totalUpcomingEntries: 0,
+          affectedMembers: 0,
+          allDayEntries: 0,
+          timedEntries: 0,
+          entriesToday: 0
+        },
+        teamMembers: fallbackTeamMembers,
+        upcomingEntries: [],
+        memberSummaries: fallbackTeamMembers.map((member) => ({
+          memberId: member.id,
+          name: member.name,
+          roleLabel: member.roleLabel,
+          active: member.active ?? true,
+          upcomingCount: 0,
+          allDayCount: 0,
+          timedCount: 0,
+          nextBlockedDate: null
+        }))
+      };
+    }
+
+    const todayStart = combineDateTime(formatDate(new Date()), "00:00");
+    const [teamMembers, blockedEntries] = await Promise.all([
+      getTeamMembers(business.id),
+      prisma.teamMemberBlockedDate.findMany({
+        where: {
+          teamMember: { businessId: business.id },
+          date: { gte: todayStart }
+        },
+        include: {
+          teamMember: {
+            select: {
+              name: true,
+              isActive: true
+            }
+          }
+        },
+        orderBy: [{ date: "asc" }, { startTime: "asc" }, { createdAt: "asc" }]
+      })
+    ]);
+
+    const upcomingEntries = blockedEntries.map(mapTeamMemberBlockedEntry);
+    const today = formatDate(new Date());
+    const memberSummaries = teamMembers
+      .map((member) => {
+        const entries = upcomingEntries.filter((entry) => entry.teamMemberId === member.id);
+
+        return {
+          memberId: member.id,
+          name: member.name,
+          roleLabel: member.roleLabel,
+          active: member.active ?? true,
+          upcomingCount: entries.length,
+          allDayCount: entries.filter((entry) => entry.isAllDay).length,
+          timedCount: entries.filter((entry) => !entry.isAllDay).length,
+          nextBlockedDate: entries[0]?.date ?? null
+        };
+      })
+      .sort((left, right) => right.upcomingCount - left.upcomingCount || left.name.localeCompare(right.name, "id"));
+
+    return {
+      summary: {
+        totalUpcomingEntries: upcomingEntries.length,
+        affectedMembers: memberSummaries.filter((member) => member.upcomingCount > 0).length,
+        allDayEntries: upcomingEntries.filter((entry) => entry.isAllDay).length,
+        timedEntries: upcomingEntries.filter((entry) => !entry.isAllDay).length,
+        entriesToday: upcomingEntries.filter((entry) => entry.date === today).length
+      },
+      teamMembers,
+      upcomingEntries,
+      memberSummaries
+    };
+  }, {
+    summary: {
+      totalUpcomingEntries: 0,
+      affectedMembers: 0,
+      allDayEntries: 0,
+      timedEntries: 0,
+      entriesToday: 0
+    },
+    teamMembers: fallbackTeamMembers,
+    upcomingEntries: [],
+    memberSummaries: fallbackTeamMembers.map((member) => ({
+      memberId: member.id,
+      name: member.name,
+      roleLabel: member.roleLabel,
+      active: member.active ?? true,
+      upcomingCount: 0,
+      allDayCount: 0,
+      timedCount: 0,
+      nextBlockedDate: null
+    }))
+  });
 }
 
 function getMinutesBetween(startTime: string, endTime: string) {
